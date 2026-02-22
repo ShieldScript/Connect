@@ -1,0 +1,37 @@
+[
+  {
+    "id": "a02fc85d-7c70-4b41-b0c4-58cd59dc0015",
+    "personId": "965cd6a1-c67b-4023-8974-7757806b9c6f",
+    "interestId": "d198f09f-69a8-4806-8fbb-44e18fe244d4",
+    "proficiencyLevel": 2,
+    "createdAt": "2026-02-14T12:11:30.907Z"
+  },
+  {
+    "id": "f373dde4-8bdf-4be9-88f6-3b6759700fa7",
+    "personId": "965cd6a1-c67b-4023-8974-7757806b9c6f",
+    "interestId": "a2c24144-eceb-4431-92ee-8ab3643683ff",
+    "proficiencyLevel": 2,
+    "createdAt": "2026-02-14T12:11:30.907Z"
+  },
+  {
+    "id": "c9afa03c-18ee-42a5-98eb-37f41450f6ca",
+    "personId": "965cd6a1-c67b-4023-8974-7757806b9c6f",
+    "interestId": "aa7e2fb1-9898-4230-8ff1-7161b70ec124",
+    "proficiencyLevel": 2,
+    "createdAt": "2026-02-14T12:11:30.907Z"
+  },
+  {
+    "id": "3094b0d7-c76e-4779-a9d5-33e073ec8411",
+    "personId": "965cd6a1-c67b-4023-8974-7757806b9c6f",
+    "interestId": "b7902e79-8582-47f8-ab1a-42ecf10f92d4",
+    "proficiencyLevel": 2,
+    "createdAt": "2026-02-14T12:11:30.907Z"
+  },
+  {
+    "id": "fadff342-880e-4f77-a3a2-fd86ce9ef827",
+    "personId": "965cd6a1-c67b-4023-8974-7757806b9c6f",
+    "interestId": "cb96bdf5-7785-4b1e-aa67-aed67f3ecf76",
+    "proficiencyLevel": 2,
+    "createdAt": "2026-02-14T12:11:30.907Z"
+  }
+]

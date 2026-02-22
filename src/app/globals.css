@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Welcome Letter Modal Animations */
+@keyframes pulse-once {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.02);
+  }
+}
+
+.animate-pulse-once {
+  animation: pulse-once 1s ease-in-out 2;
+}
+
+/* Profile Setup Screen Loading Bar */
+@keyframes loading-bar {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-loading-bar {
+  animation: loading-bar 2s ease-in-out infinite;
+}
+
+/* Unlock Sequence Animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out forwards;
+}
+
+.animate-slide-down {
+  animation: slide-down 0.3s ease-out forwards;
+}
+
+/* Remove focus outline and hover state persistence from clickable cards */
+div[id^="intel-item"],
+div[id^="intel-item"]:focus,
+div[id^="intel-item"]:active,
+div[id^="intel-item"]:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Prevent active/focus state from keeping hover styling */
+div[id^="intel-item"]:active:not(:hover),
+div[id^="intel-item"]:focus:not(:hover) {
+  background-color: white !important;
+  border-color: rgb(229, 231, 235) !important; /* gray-200 */
+}
+
+button:focus,
+button:active,
+button:focus-visible {
+  outline: none !important;
+}

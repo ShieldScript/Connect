@@ -1,0 +1,322 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Person {
+  id              String  @id @default(uuid())
+  supabaseUserId  String  @unique
+  email           String  @unique
+  displayName     String
+  phone           String?
+  bio             String?
+  profileImageUrl String?
+
+  // Location fields
+  latitude          Float?
+  longitude         Float?
+  location          Unsupported("geography")?
+  city              String?
+  region            String?
+  community         String?
+  proximityRadiusKm Int                       @default(5)
+  locationPrivacy   LocationPrivacy           @default(APPROXIMATE)
+
+  // Profile fields
+  ageRange          String?
+  gender            String?
+  archetype         String?
+  connectionStyle   String?
+  personalityTraits Json?
+
+  // Preferences and signals
+  groupPreferences    Json?
+  leadershipSignals   Json?
+  isPotentialShepherd Boolean @default(false)
+
+  // Covenant/Spiritual Fields
+  churchAffiliation   String?
+  spiritualGoals      String[] @default([])
+  accountabilityAreas String[] @default([])
+  covenantAgreedAt    DateTime?
+  covenantData        Json?
+
+  // Safety and blocking
+  blockedPersons String[] @default([])
+  safetyFlags    String[] @default([])
+
+  // Metadata
+  onboardingLevel Int       @default(0)
+  lastActiveAt    DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  createdGroups         Group[]              @relation("GroupCreator")
+  memberships           GroupMembership[]
+  interests             PersonInterest[]
+  safetyReportsCreated  SafetyReport[]       @relation("ReporterReports")
+  safetyReportsReceived SafetyReport[]       @relation("ReportedPersonReports")
+  compatibilityScores   CompatibilityScore[] @relation("PersonScores")
+  huddleMessages        HuddleMessage[]
+  prayerPosts           PrayerPost[]         @relation("AuthoredPrayerPosts")
+  prayerResponses       PrayerResponse[]     @relation("PrayerResponses")
+  notifications         Notification[]
+
+  @@index([latitude, longitude])
+  @@index([onboardingLevel])
+  @@index([location], map: "idx_person_location", type: Gist)
+}
+
+model Interest {
+  id          String           @id @default(uuid())
+  name        String           @unique
+  category    String
+  description String?
+  popularity  Int              @default(0)
+  subcategory String?
+  metadata    Json?
+  createdAt   DateTime         @default(now())
+  persons     PersonInterest[]
+
+  @@index([category])
+  @@index([popularity])
+}
+
+model PersonInterest {
+  id               String   @id @default(uuid())
+  personId         String
+  interestId       String
+  proficiencyLevel Int      @default(3)
+  createdAt        DateTime @default(now())
+  interest         Interest @relation(fields: [interestId], references: [id], onDelete: Cascade)
+  person           Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@unique([personId, interestId])
+  @@index([personId])
+  @@index([interestId])
+  @@index([proficiencyLevel])
+}
+
+model SafetyReport {
+  id               String       @id @default(uuid())
+  reporterId       String?
+  reportedPersonId String?
+  reportedGroupId  String?
+  reason           String
+  details          String?
+  status           ReportStatus @default(PENDING)
+  reviewedAt       DateTime?
+  reviewedBy       String?
+  actionTaken      Json?
+  createdAt        DateTime     @default(now())
+
+  reporter       Person? @relation("ReporterReports", fields: [reporterId], references: [id])
+  reportedPerson Person? @relation("ReportedPersonReports", fields: [reportedPersonId], references: [id])
+  reportedGroup  Group?  @relation("ReportedGroupReports", fields: [reportedGroupId], references: [id])
+
+  @@index([reporterId])
+  @@index([reportedPersonId, status])
+  @@index([reportedGroupId, status])
+  @@index([status, createdAt])
+}
+
+model CompatibilityScore {
+  id                 String   @id @default(uuid())
+  personId           String
+  matchedPersonId    String
+  interestSimilarity Float
+  proximityScore     Float
+  overallScore       Float
+  matchReasons       String[]
+  calculatedAt       DateTime @default(now())
+  expiresAt          DateTime
+
+  person Person @relation("PersonScores", fields: [personId], references: [id], onDelete: Cascade)
+
+  @@unique([personId, matchedPersonId])
+  @@index([personId, overallScore])
+  @@index([calculatedAt])
+}
+
+model Group {
+  id            String                    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name          String
+  description   String?
+  protocol      String?
+  imageUrl      String?
+  type          GroupType
+  category      GroupCategory             @default(CIRCLE)
+  locationName  String?
+  latitude      Float?
+  longitude     Float?
+  isVirtual     Boolean                   @default(false)
+  minSize       Int                       @default(2)
+  maxSize       Int?
+  currentSize   Int                       @default(0)
+  createdBy     String
+  leaderIds     String[]                  @default([])
+  isPublic      Boolean                   @default(true)
+  tags          String[]                  @default([])
+  status        GroupStatus               @default(ACTIVE)
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @default(now()) @updatedAt
+  location      Unsupported("geography")?
+  creator       Person                    @relation("GroupCreator", fields: [createdBy], references: [id])
+  memberships   GroupMembership[]
+  safetyReports SafetyReport[]            @relation("ReportedGroupReports")
+  messages      HuddleMessage[]
+
+  @@index([createdBy])
+  @@index([latitude, longitude])
+  @@index([status])
+  @@index([type])
+  @@index([location], map: "idx_group_location", type: Gist)
+}
+
+model GroupMembership {
+  id              String       @id @default(dbgenerated("(gen_random_uuid())::text"))
+  personId        String
+  groupId         String
+  role            MemberRole   @default(MEMBER)
+  status          MemberStatus @default(PENDING)
+  joinRequestedAt DateTime     @default(now())
+  joinedAt        DateTime?
+  lastEngagedAt   DateTime?
+  lastReadAt      DateTime?    // Track when user last read huddle messages
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @default(now()) @updatedAt
+  group           Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  person          Person       @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([personId])
+  @@index([groupId])
+  @@index([status])
+  @@index([role])
+}
+
+model HuddleMessage {
+  id        String    @id @default(uuid())
+  huddleId  String
+  senderId  String
+  content   String    @db.Text
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  huddle Group  @relation(fields: [huddleId], references: [id], onDelete: Cascade)
+  sender Person @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([huddleId, createdAt(sort: Desc)])
+  @@index([senderId])
+}
+
+model PrayerPost {
+  id          String   @id @default(uuid())
+  authorId    String
+  content     String   @db.Text
+  prayerCount Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  author   Person           @relation("AuthoredPrayerPosts", fields: [authorId], references: [id], onDelete: Cascade)
+  prayers  PrayerResponse[]
+
+  @@index([createdAt(sort: Desc)])
+  @@index([authorId])
+}
+
+model PrayerResponse {
+  id           String   @id @default(uuid())
+  prayerPostId String
+  prayerId     String
+  createdAt    DateTime @default(now())
+
+  prayerPost PrayerPost @relation(fields: [prayerPostId], references: [id], onDelete: Cascade)
+  prayer     Person     @relation("PrayerResponses", fields: [prayerId], references: [id], onDelete: Cascade)
+
+  @@unique([prayerPostId, prayerId])
+  @@index([prayerPostId])
+  @@index([prayerId])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  personId  String
+  type      NotificationType
+  title     String
+  message   String
+  relatedId String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([personId, isRead, createdAt(sort: Desc)])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model spatial_ref_sys {
+  srid      Int     @id
+  auth_name String? @db.VarChar(256)
+  auth_srid Int?
+  srtext    String? @db.VarChar(2048)
+  proj4text String? @db.VarChar(2048)
+}
+
+enum GroupType {
+  HOBBY
+  SUPPORT
+  SPIRITUAL
+  PROFESSIONAL
+  SOCIAL
+  OTHER
+}
+
+enum GroupCategory {
+  CIRCLE
+  HUDDLE
+}
+
+enum GroupStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum MemberRole {
+  MEMBER
+  LEADER
+  CREATOR
+}
+
+enum MemberStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+  REMOVED
+}
+
+enum LocationPrivacy {
+  EXACT
+  APPROXIMATE
+  CITY_ONLY
+  HIDDEN
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  ACTIONED
+  DISMISSED
+}
+
+enum NotificationType {
+  PRAYER_RECEIVED
+  GROUP_INVITE
+  HUDDLE_MESSAGE
+}

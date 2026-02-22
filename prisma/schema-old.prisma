@@ -1,0 +1,206 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model CompatibilityScore {
+  id                                                String   @id
+  personId                                          String
+  matchedPersonId                                   String
+  interestSimilarity                                Float
+  proximityScore                                    Float
+  overallScore                                      Float
+  matchReasons                                      Json
+  calculatedAt                                      DateTime @default(now())
+  expiresAt                                         DateTime
+  Person_CompatibilityScore_matchedPersonIdToPerson Person   @relation("CompatibilityScore_matchedPersonIdToPerson", fields: [matchedPersonId], references: [id], onDelete: Cascade)
+  Person_CompatibilityScore_personIdToPerson        Person   @relation("CompatibilityScore_personIdToPerson", fields: [personId], references: [id], onDelete: Cascade)
+
+  @@unique([personId, matchedPersonId])
+  @@index([expiresAt])
+  @@index([personId, overallScore])
+}
+
+model Group {
+  id              String            @id
+  name            String
+  description     String?
+  imageUrl        String?
+  type            GroupType
+  latitude        Float?
+  longitude       Float?
+  isVirtual       Boolean           @default(false)
+  minSize         Int               @default(2)
+  maxSize         Int?
+  currentSize     Int               @default(0)
+  createdBy       String
+  leaderIds       String[]          @default([])
+  isPublic        Boolean           @default(true)
+  tags            String[]          @default([])
+  status          GroupStatus       @default(ACTIVE)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime
+  Person          Person            @relation(fields: [createdBy], references: [id])
+  GroupMembership GroupMembership[]
+
+  @@index([latitude, longitude])
+  @@index([status])
+  @@index([type])
+}
+
+model GroupMembership {
+  id              String       @id
+  personId        String
+  groupId         String
+  role            MemberRole   @default(MEMBER)
+  status          MemberStatus @default(PENDING)
+  joinRequestedAt DateTime     @default(now())
+  joinedAt        DateTime?
+  lastEngagedAt   DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime
+  Group           Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  Person          Person       @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@unique([personId, groupId])
+  @@index([groupId])
+  @@index([personId])
+  @@index([status])
+}
+
+model Interest {
+  id             String           @id
+  name           String           @unique
+  category       String
+  description    String?
+  popularity     Int              @default(0)
+  createdAt      DateTime         @default(now())
+  metadata       Json?
+  subcategory    String?
+  PersonInterest PersonInterest[]
+
+  @@index([category])
+  @@index([popularity])
+}
+
+model Person {
+  id                                                            String               @id
+  supabaseUserId                                                String               @unique
+  email                                                         String               @unique
+  phone                                                         String?
+  displayName                                                   String
+  bio                                                           String?
+  profileImageUrl                                               String?
+  latitude                                                      Float?
+  longitude                                                     Float?
+  locationPrivacy                                               LocationPrivacy      @default(APPROXIMATE)
+  proximityRadiusKm                                             Int                  @default(50)
+  ageRange                                                      String?
+  gender                                                        String?
+  personalityTraits                                             Json?
+  groupPreferences                                              Json?
+  onboardingLevel                                               Int                  @default(0)
+  safetyFlags                                                   String[]             @default([])
+  blockedPersons                                                String[]             @default([])
+  lastActiveAt                                                  DateTime?
+  createdAt                                                     DateTime             @default(now())
+  updatedAt                                                     DateTime
+  isPotentialShepherd                                           Boolean              @default(false)
+  leadershipSignals                                             Json?
+  gamificationMeta                                              Json?
+  CompatibilityScore_CompatibilityScore_matchedPersonIdToPerson CompatibilityScore[] @relation("CompatibilityScore_matchedPersonIdToPerson")
+  CompatibilityScore_CompatibilityScore_personIdToPerson        CompatibilityScore[] @relation("CompatibilityScore_personIdToPerson")
+  Group                                                         Group[]
+  GroupMembership                                               GroupMembership[]
+  PersonInterest                                                PersonInterest[]
+
+  @@index([latitude, longitude])
+  @@index([onboardingLevel])
+}
+
+model PersonInterest {
+  id               String   @id
+  personId         String
+  interestId       String
+  weight           Int      @default(5)
+  createdAt        DateTime @default(now())
+  proficiencyLevel Int      @default(1)
+  Interest         Interest @relation(fields: [interestId], references: [id], onDelete: Cascade)
+  Person           Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@unique([personId, interestId])
+  @@index([interestId])
+  @@index([personId])
+  @@index([proficiencyLevel])
+}
+
+model SafetyReport {
+  id               String       @id
+  reporterId       String?
+  reportedPersonId String?
+  reportedGroupId  String?
+  reason           String
+  details          String?
+  status           ReportStatus @default(PENDING)
+  reviewedAt       DateTime?
+  actionTaken      Json?
+  createdAt        DateTime     @default(now())
+
+  @@index([reportedPersonId])
+  @@index([status])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model spatial_ref_sys {
+  srid      Int     @id
+  auth_name String? @db.VarChar(256)
+  auth_srid Int?
+  srtext    String? @db.VarChar(2048)
+  proj4text String? @db.VarChar(2048)
+}
+
+enum GroupStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum GroupType {
+  HOBBY
+  SUPPORT
+  SPIRITUAL
+  PROFESSIONAL
+  SOCIAL
+  OTHER
+}
+
+enum LocationPrivacy {
+  EXACT
+  APPROXIMATE
+  CITY_ONLY
+  HIDDEN
+}
+
+enum MemberRole {
+  MEMBER
+  LEADER
+  CREATOR
+}
+
+enum MemberStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+  REMOVED
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  ACTIONED
+  DISMISSED
+}

@@ -1,0 +1,1172 @@
+[
+  {
+    "id": "b6995d6f-e4e9-474c-9ddd-1a5d64d92cbc",
+    "name": "Hunting & Fishing",
+    "category": "outdoor_adventure",
+    "description": "Hunting, fishing, conservation ethics, safety training",
+    "popularity": 70,
+    "createdAt": "2026-02-14T03:43:53.193Z",
+    "metadata": {
+      "safety": "required",
+      "location": "outdoor",
+      "intensity": "medium",
+      "commitment": "recurring",
+      "skillLevel": "intermediate",
+      "spiritualFocus": null,
+      "trustRequirement": "vouched"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "0f12a7e1-b6d5-41bd-bf6c-c213dfc63e58",
+    "name": "Trail Running & Endurance Events",
+    "category": "outdoor_adventure",
+    "description": "Trail running, ultra marathons, obstacle races",
+    "popularity": 75,
+    "createdAt": "2026-02-14T03:43:53.287Z",
+    "metadata": {
+      "safety": "recommended",
+      "location": "outdoor",
+      "intensity": "high",
+      "commitment": "recurring",
+      "skillLevel": "intermediate",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "cde0601d-6f50-4f40-b0bd-f7f8c6b3c29c",
+    "name": "Camping & Bushcraft",
+    "category": "outdoor_adventure",
+    "description": "Camping, bushcraft, survival skills",
+    "popularity": 80,
+    "createdAt": "2026-02-14T03:43:53.372Z",
+    "metadata": {
+      "safety": "recommended",
+      "location": "outdoor",
+      "intensity": "medium",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "5d6a13c8-cb87-4874-be13-6beda1def7b1",
+    "name": "Mountaineering & Alpinism",
+    "category": "outdoor_adventure",
+    "description": "Mountain climbing, alpine adventures",
+    "popularity": 60,
+    "createdAt": "2026-02-14T03:43:53.460Z",
+    "metadata": {
+      "safety": "required",
+      "location": "outdoor",
+      "intensity": "high",
+      "commitment": "recurring",
+      "skillLevel": "advanced",
+      "spiritualFocus": null,
+      "trustRequirement": "verified_leader"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "1a81fb1e-56dd-463c-8695-0047fcdc372a",
+    "name": "Overlanding & Off-roading",
+    "category": "outdoor_adventure",
+    "description": "4x4 adventures, vehicle-based camping",
+    "popularity": 68,
+    "createdAt": "2026-02-14T03:43:53.547Z",
+    "metadata": {
+      "safety": "recommended",
+      "location": "outdoor",
+      "intensity": "medium",
+      "commitment": "recurring",
+      "skillLevel": "intermediate",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "a9a8149d-506b-4d4b-8006-2457a08c5743",
+    "name": "Sailing & Boating",
+    "category": "outdoor_adventure",
+    "description": "Sailing, powerboating, water sports",
+    "popularity": 55,
+    "createdAt": "2026-02-14T03:43:53.631Z",
+    "metadata": {
+      "safety": "required",
+      "location": "outdoor",
+      "intensity": "medium",
+      "commitment": "recurring",
+      "skillLevel": "intermediate",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "ce074d23-466d-40de-9436-b19ff5238866",
+    "name": "Wilderness First Aid",
+    "category": "outdoor_adventure",
+    "description": "Emergency response in remote settings",
+    "popularity": 65,
+    "createdAt": "2026-02-14T03:43:53.720Z",
+    "metadata": {
+      "safety": "required",
+      "location": "hybrid",
+      "intensity": "medium",
+      "commitment": "program",
+      "skillLevel": "instructor",
+      "spiritualFocus": null,
+      "trustRequirement": "verified_leader"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "7cc9b167-7121-4808-8adf-41c9da57354b",
+    "name": "Navigation & Orienteering",
+    "category": "outdoor_adventure",
+    "description": "Map, compass, GPS skills",
+    "popularity": 58,
+    "createdAt": "2026-02-14T03:43:53.806Z",
+    "metadata": {
+      "safety": "recommended",
+      "location": "outdoor",
+      "intensity": "low",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "e14748c3-0ed2-4d8f-b34b-933b2e01b75c",
+    "name": "Hiking & Backpacking",
+    "category": "outdoor_adventure",
+    "description": "Day hikes, multi-day backpacking trips",
+    "popularity": 85,
+    "createdAt": "2026-02-14T03:43:53.891Z",
+    "metadata": {
+      "safety": "recommended",
+      "location": "outdoor",
+      "intensity": "medium",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "70a53a1b-710e-4f0c-9bdf-f13f7989ad34",
+    "name": "Rock Climbing & Bouldering",
+    "category": "outdoor_adventure",
+    "description": "Indoor/outdoor climbing, bouldering",
+    "popularity": 70,
+    "createdAt": "2026-02-14T03:43:53.977Z",
+    "metadata": {
+      "safety": "required",
+      "location": "hybrid",
+      "intensity": "high",
+      "commitment": "recurring",
+      "skillLevel": "intermediate",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "0bbc4175-1dd4-4c5c-a5d2-6fa285f3639b",
+    "name": "Woodworking & Carpentry",
+    "category": "craftsmanship_trades_maker",
+    "description": "Furniture making, woodworking projects",
+    "popularity": 75,
+    "createdAt": "2026-02-14T03:43:54.064Z",
+    "metadata": {
+      "safety": "recommended",
+      "location": "indoor",
+      "intensity": "medium",
+      "commitment": "recurring",
+      "skillLevel": "intermediate",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "0aadeaab-d924-49f0-bb50-b38d69c24b8a",
+    "name": "Metalworking & Blacksmithing",
+    "category": "craftsmanship_trades_maker",
+    "description": "Forging, welding, metal fabrication",
+    "popularity": 65,
+    "createdAt": "2026-02-14T03:43:54.149Z",
+    "metadata": {
+      "safety": "required",
+      "location": "indoor",
+      "intensity": "high",
+      "commitment": "recurring",
+      "skillLevel": "advanced",
+      "spiritualFocus": null,
+      "trustRequirement": "vouched"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "318d12b4-f897-4fd8-8ca5-b41b619de358",
+    "name": "Automotive Restoration",
+    "category": "craftsmanship_trades_maker",
+    "description": "Classic car restoration, mechanics",
+    "popularity": 68,
+    "createdAt": "2026-02-14T03:43:54.234Z",
+    "metadata": {
+      "safety": "recommended",
+      "location": "indoor",
+      "intensity": "medium",
+      "commitment": "program",
+      "skillLevel": "intermediate",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "a772c896-dca3-4e23-850d-a217bb8e096e",
+    "name": "Home Renovation & Repair",
+    "category": "craftsmanship_trades_maker",
+    "description": "DIY home projects, repairs, construction",
+    "popularity": 78,
+    "createdAt": "2026-02-14T03:43:54.320Z",
+    "metadata": {
+      "safety": "recommended",
+      "location": "hybrid",
+      "intensity": "medium",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "373c1eee-f4ab-4f6f-8ae8-f1397e2b4a06",
+    "name": "Brewing & Distilling",
+    "category": "craftsmanship_trades_maker",
+    "description": "Homebrewing beer, wine, spirits",
+    "popularity": 62,
+    "createdAt": "2026-02-14T03:43:54.406Z",
+    "metadata": {
+      "safety": "none",
+      "location": "indoor",
+      "intensity": "low",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "9daf657d-9cce-4948-8df4-dbcf7e040161",
+    "name": "Electronics & Maker Projects",
+    "category": "craftsmanship_trades_maker",
+    "description": "Raspberry Pi, robotics, 3D printing, electronics",
+    "popularity": 70,
+    "createdAt": "2026-02-14T03:43:54.492Z",
+    "metadata": {
+      "safety": "none",
+      "location": "indoor",
+      "intensity": "low",
+      "commitment": "recurring",
+      "skillLevel": "intermediate",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "f90221ca-5ab3-4f2f-a606-05b3c3db8819",
+    "name": "Leatherworking",
+    "category": "craftsmanship_trades_maker",
+    "description": "Leather crafts, tool making, bags, belts",
+    "popularity": 58,
+    "createdAt": "2026-02-14T03:43:54.577Z",
+    "metadata": {
+      "safety": "none",
+      "location": "indoor",
+      "intensity": "low",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "1e196170-6851-46bc-bfba-cbef732dd781",
+    "name": "Gardening & Homesteading",
+    "category": "craftsmanship_trades_maker",
+    "description": "Vegetable gardens, small-scale farming, chickens",
+    "popularity": 72,
+    "createdAt": "2026-02-14T03:43:54.664Z",
+    "metadata": {
+      "safety": "none",
+      "location": "outdoor",
+      "intensity": "medium",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "2f721aa2-5d3c-411d-b302-ff6cbd148d61",
+    "name": "Small Business & Trade Mentoring",
+    "category": "craftsmanship_trades_maker",
+    "description": "Mentoring apprentices, sharing trade skills",
+    "popularity": 60,
+    "createdAt": "2026-02-14T03:43:54.749Z",
+    "metadata": {
+      "safety": "none",
+      "location": "hybrid",
+      "intensity": "low",
+      "commitment": "program",
+      "skillLevel": "instructor",
+      "spiritualFocus": "service",
+      "trustRequirement": "verified_leader"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "fc0938df-c0b4-4b90-8fa3-e29f39e8d074",
+    "name": "Martial Arts & Combat Sports",
+    "category": "physicality_combat_team_sports",
+    "description": "BJJ, Muay Thai, boxing, Krav Maga",
+    "popularity": 75,
+    "createdAt": "2026-02-14T03:43:54.835Z",
+    "metadata": {
+      "safety": "recommended",
+      "location": "indoor",
+      "intensity": "high",
+      "commitment": "recurring",
+      "skillLevel": "intermediate",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "cb57f530-7756-492b-8d33-3eabab176900",
+    "name": "Strength Training & Weightlifting",
+    "category": "physicality_combat_team_sports",
+    "description": "Powerlifting, Olympic lifting, bodybuilding",
+    "popularity": 88,
+    "createdAt": "2026-02-14T03:43:54.932Z",
+    "metadata": {
+      "safety": "recommended",
+      "location": "indoor",
+      "intensity": "high",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "0149966f-1732-40b5-b0e4-fae2d966d2af",
+    "name": "Team Sports (Rugby, Soccer, Hockey)",
+    "category": "physicality_combat_team_sports",
+    "description": "Team-based contact and field sports",
+    "popularity": 70,
+    "createdAt": "2026-02-14T03:43:55.017Z",
+    "metadata": {
+      "safety": "recommended",
+      "location": "outdoor",
+      "intensity": "high",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "a7ce330c-4d84-4cae-8108-80d28b91a7c3",
+    "name": "Marksmanship & Archery",
+    "category": "physicality_combat_team_sports",
+    "description": "Firearms training, archery, competitive shooting",
+    "popularity": 65,
+    "createdAt": "2026-02-14T03:43:55.100Z",
+    "metadata": {
+      "safety": "required",
+      "location": "outdoor",
+      "intensity": "medium",
+      "commitment": "recurring",
+      "skillLevel": "intermediate",
+      "spiritualFocus": null,
+      "trustRequirement": "vouched"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "9e666cc1-7e78-4ce8-9c5e-a6113553aa4c",
+    "name": "Endurance Running & Obstacle Races",
+    "category": "physicality_combat_team_sports",
+    "description": "Marathons, Spartan races, tough mudders",
+    "popularity": 72,
+    "createdAt": "2026-02-14T03:43:55.184Z",
+    "metadata": {
+      "safety": "recommended",
+      "location": "outdoor",
+      "intensity": "high",
+      "commitment": "recurring",
+      "skillLevel": "intermediate",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "c654dfc6-cde7-47f2-8cc1-9e50ef9f8e5d",
+    "name": "Motorcycling & Touring",
+    "category": "physicality_combat_team_sports",
+    "description": "Motorcycle riding, touring, safety training",
+    "popularity": 68,
+    "createdAt": "2026-02-14T03:43:55.269Z",
+    "metadata": {
+      "safety": "required",
+      "location": "outdoor",
+      "intensity": "medium",
+      "commitment": "recurring",
+      "skillLevel": "intermediate",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "38f3c19a-0bc6-4332-b11e-a25659e0cd80",
+    "name": "CrossFit & Functional Fitness",
+    "category": "physicality_combat_team_sports",
+    "description": "High-intensity functional training",
+    "popularity": 80,
+    "createdAt": "2026-02-14T03:43:55.354Z",
+    "metadata": {
+      "safety": "recommended",
+      "location": "indoor",
+      "intensity": "high",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "a2c24144-eceb-4431-92ee-8ab3643683ff",
+    "name": "Barbecue & Grilling",
+    "category": "culinary_fire_food",
+    "description": "Smoking meat, grilling, BBQ competitions",
+    "popularity": 82,
+    "createdAt": "2026-02-14T03:43:55.440Z",
+    "metadata": {
+      "safety": "none",
+      "location": "outdoor",
+      "intensity": "low",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "cb96bdf5-7785-4b1e-aa67-aed67f3ecf76",
+    "name": "Butchery & Meat Processing",
+    "category": "culinary_fire_food",
+    "description": "Whole animal butchery, charcuterie",
+    "popularity": 58,
+    "createdAt": "2026-02-14T03:43:55.526Z",
+    "metadata": {
+      "safety": "required",
+      "location": "indoor",
+      "intensity": "medium",
+      "commitment": "program",
+      "skillLevel": "advanced",
+      "spiritualFocus": null,
+      "trustRequirement": "vouched"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "b7902e79-8582-47f8-ab1a-42ecf10f92d4",
+    "name": "Foraging & Wild Foods",
+    "category": "culinary_fire_food",
+    "description": "Wild edible plants, mushrooms, ethical harvesting",
+    "popularity": 62,
+    "createdAt": "2026-02-14T03:43:55.611Z",
+    "metadata": {
+      "safety": "recommended",
+      "location": "outdoor",
+      "intensity": "low",
+      "commitment": "recurring",
+      "skillLevel": "intermediate",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "d198f09f-69a8-4806-8fbb-44e18fe244d4",
+    "name": "Cooking & Culinary Arts",
+    "category": "culinary_fire_food",
+    "description": "Home cooking, knife skills, recipe development",
+    "popularity": 75,
+    "createdAt": "2026-02-14T03:43:55.698Z",
+    "metadata": {
+      "safety": "none",
+      "location": "indoor",
+      "intensity": "low",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "5745404b-5eaf-4044-88fb-7e9e56ad2a48",
+    "name": "Community Kitchens & Food Service",
+    "category": "culinary_fire_food",
+    "description": "Feeding the hungry, meal prep outreach",
+    "popularity": 70,
+    "createdAt": "2026-02-14T03:43:55.782Z",
+    "metadata": {
+      "safety": "none",
+      "location": "indoor",
+      "intensity": "medium",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": "service",
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "58c9c1eb-eed6-47c3-9a6d-0441aaf113c0",
+    "name": "Chess & Strategy Games",
+    "category": "strategy_mentorship_leadership",
+    "description": "Chess, board games, strategic thinking",
+    "popularity": 68,
+    "createdAt": "2026-02-14T03:43:55.867Z",
+    "metadata": {
+      "safety": "none",
+      "location": "indoor",
+      "intensity": "low",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "360d2141-59f0-45d9-9dba-6a1f6609c855",
+    "name": "Mentorship & Coaching",
+    "category": "strategy_mentorship_leadership",
+    "description": "One-on-one mentoring, life coaching",
+    "popularity": 75,
+    "createdAt": "2026-02-14T03:43:55.953Z",
+    "metadata": {
+      "safety": "none",
+      "location": "hybrid",
+      "intensity": "medium",
+      "commitment": "program",
+      "skillLevel": "instructor",
+      "spiritualFocus": "service",
+      "trustRequirement": "verified_leader"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "73fa3954-2a6d-452d-a3b6-abf340f6d600",
+    "name": "Leadership Training",
+    "category": "strategy_mentorship_leadership",
+    "description": "Team leadership, servant leadership, facilitation",
+    "popularity": 72,
+    "createdAt": "2026-02-14T03:43:56.038Z",
+    "metadata": {
+      "safety": "none",
+      "location": "hybrid",
+      "intensity": "medium",
+      "commitment": "program",
+      "skillLevel": "intermediate",
+      "spiritualFocus": "discipleship",
+      "trustRequirement": "verified_leader"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "8d2e5d2b-e455-40d9-829d-971ae9ce088c",
+    "name": "Entrepreneurship & Startups",
+    "category": "strategy_mentorship_leadership",
+    "description": "Building businesses, product development",
+    "popularity": 78,
+    "createdAt": "2026-02-14T03:43:56.125Z",
+    "metadata": {
+      "safety": "none",
+      "location": "hybrid",
+      "intensity": "high",
+      "commitment": "program",
+      "skillLevel": "intermediate",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "23e0a767-41fa-488d-8893-5690d13faec5",
+    "name": "Project Leadership & Service",
+    "category": "strategy_mentorship_leadership",
+    "description": "Leading volunteer projects, coordinating teams",
+    "popularity": 65,
+    "createdAt": "2026-02-14T03:43:56.211Z",
+    "metadata": {
+      "safety": "none",
+      "location": "hybrid",
+      "intensity": "medium",
+      "commitment": "recurring",
+      "skillLevel": "intermediate",
+      "spiritualFocus": "service",
+      "trustRequirement": "vouched"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "f81c90e1-1d98-46ec-a29e-70152ae58fcd",
+    "name": "Financial Stewardship & Personal Finance",
+    "category": "strategy_mentorship_leadership",
+    "description": "Budgeting, investing, financial coaching",
+    "popularity": 70,
+    "createdAt": "2026-02-14T03:43:56.298Z",
+    "metadata": {
+      "safety": "none",
+      "location": "hybrid",
+      "intensity": "low",
+      "commitment": "program",
+      "skillLevel": "intermediate",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "3fe100f0-d984-4ca4-b6e6-db63b10dc02f",
+    "name": "Bible Study & Scripture",
+    "category": "faith_formation_relational",
+    "description": "Group Bible study, inductive study, theology",
+    "popularity": 85,
+    "createdAt": "2026-02-14T03:43:56.387Z",
+    "metadata": {
+      "safety": "none",
+      "location": "hybrid",
+      "intensity": "low",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": "discipleship",
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "b99fbd8a-44b2-4cdd-b1d4-8d57ab1374a6",
+    "name": "Prayer Cohorts & Intercession",
+    "category": "faith_formation_relational",
+    "description": "Prayer groups, prayer walking, intercession",
+    "popularity": 80,
+    "createdAt": "2026-02-14T03:43:56.472Z",
+    "metadata": {
+      "safety": "none",
+      "location": "hybrid",
+      "intensity": "low",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": "worship",
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "67887ede-9412-48be-abce-eaea5698551b",
+    "name": "Spiritual Retreats & Solitude",
+    "category": "faith_formation_relational",
+    "description": "Quiet days, silent retreats, Sabbath rest",
+    "popularity": 68,
+    "createdAt": "2026-02-14T03:43:56.559Z",
+    "metadata": {
+      "safety": "none",
+      "location": "hybrid",
+      "intensity": "low",
+      "commitment": "one_off",
+      "skillLevel": "beginner",
+      "spiritualFocus": "worship",
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "2e283cc0-e9c5-400c-a782-87abe3788493",
+    "name": "Spiritual Mentoring & Direction",
+    "category": "faith_formation_relational",
+    "description": "Spiritual direction, faith mentoring",
+    "popularity": 72,
+    "createdAt": "2026-02-14T03:43:56.643Z",
+    "metadata": {
+      "safety": "none",
+      "location": "hybrid",
+      "intensity": "medium",
+      "commitment": "program",
+      "skillLevel": "instructor",
+      "spiritualFocus": "discipleship",
+      "trustRequirement": "verified_leader"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "791a7019-b199-4006-b83e-e12e53318cd7",
+    "name": "Parenting & Fathering Groups",
+    "category": "faith_formation_relational",
+    "description": "Dad cohorts, fathering workshops, parenting skills",
+    "popularity": 78,
+    "createdAt": "2026-02-14T03:43:56.727Z",
+    "metadata": {
+      "safety": "none",
+      "location": "hybrid",
+      "intensity": "medium",
+      "commitment": "program",
+      "skillLevel": "beginner",
+      "spiritualFocus": "discipleship",
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "ea0b5b90-d5ce-4315-901e-b953bfae51b8",
+    "name": "Pastoral Peer Support",
+    "category": "faith_formation_relational",
+    "description": "Ministry leader support, pastor cohorts",
+    "popularity": 65,
+    "createdAt": "2026-02-14T03:43:56.823Z",
+    "metadata": {
+      "safety": "none",
+      "location": "hybrid",
+      "intensity": "medium",
+      "commitment": "recurring",
+      "skillLevel": "advanced",
+      "spiritualFocus": "discipleship",
+      "trustRequirement": "verified_leader"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "40cc8bba-f65d-45bf-8858-b8529dd80587",
+    "name": "Mental Health Peer Support",
+    "category": "faith_formation_relational",
+    "description": "Resilience groups, mental health advocacy",
+    "popularity": 70,
+    "createdAt": "2026-02-14T03:43:56.907Z",
+    "metadata": {
+      "safety": "recommended",
+      "location": "hybrid",
+      "intensity": "medium",
+      "commitment": "recurring",
+      "skillLevel": "intermediate",
+      "spiritualFocus": "service",
+      "trustRequirement": "verified_leader"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "b7e0539f-0832-441a-a4fe-7eb6bfaedc8b",
+    "name": "Liturgical Practices & Rhythms",
+    "category": "faith_formation_relational",
+    "description": "Daily office, liturgy, sacred rhythms",
+    "popularity": 62,
+    "createdAt": "2026-02-14T03:43:56.993Z",
+    "metadata": {
+      "safety": "none",
+      "location": "hybrid",
+      "intensity": "low",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": "worship",
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "4315a6fa-ba5c-4f5f-909f-bb9dfecc8868",
+    "name": "Volunteer Builds (Habitat, Disaster Relief)",
+    "category": "service_civic_community",
+    "description": "Construction projects, disaster response, rebuilding",
+    "popularity": 75,
+    "createdAt": "2026-02-14T03:43:57.077Z",
+    "metadata": {
+      "safety": "recommended",
+      "location": "outdoor",
+      "intensity": "high",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": "service",
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "25a6cd44-d3eb-4c4d-919c-7820bed30e9e",
+    "name": "Community Outreach & Street Ministry",
+    "category": "service_civic_community",
+    "description": "Homeless outreach, street ministry, compassion work",
+    "popularity": 72,
+    "createdAt": "2026-02-14T03:43:57.161Z",
+    "metadata": {
+      "safety": "recommended",
+      "location": "outdoor",
+      "intensity": "medium",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": "service",
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "08249a0a-ff65-49a1-a18f-0280338066eb",
+    "name": "Prison Ministry & Re-entry Support",
+    "category": "service_civic_community",
+    "description": "Jail ministry, re-entry mentoring, advocacy",
+    "popularity": 60,
+    "createdAt": "2026-02-14T03:43:57.248Z",
+    "metadata": {
+      "safety": "required",
+      "location": "hybrid",
+      "intensity": "medium",
+      "commitment": "program",
+      "skillLevel": "intermediate",
+      "spiritualFocus": "service",
+      "trustRequirement": "verified_leader"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "d95609d1-f7be-4742-963c-b1f14eb53e2b",
+    "name": "Veterans Support & Advocacy",
+    "category": "service_civic_community",
+    "description": "Veteran peer groups, transition support",
+    "popularity": 68,
+    "createdAt": "2026-02-14T03:43:57.333Z",
+    "metadata": {
+      "safety": "recommended",
+      "location": "hybrid",
+      "intensity": "medium",
+      "commitment": "recurring",
+      "skillLevel": "intermediate",
+      "spiritualFocus": "service",
+      "trustRequirement": "vouched"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "3e62ae1e-ad62-4ee2-8550-5932aaebe3fb",
+    "name": "Civic Engagement & Advocacy",
+    "category": "service_civic_community",
+    "description": "Local politics, community organizing, justice work",
+    "popularity": 65,
+    "createdAt": "2026-02-14T03:43:57.418Z",
+    "metadata": {
+      "safety": "none",
+      "location": "hybrid",
+      "intensity": "medium",
+      "commitment": "recurring",
+      "skillLevel": "intermediate",
+      "spiritualFocus": "service",
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "46af3c85-ea2c-431f-ae0f-44219a62e5a1",
+    "name": "Environmental Conservation",
+    "category": "service_civic_community",
+    "description": "Trail maintenance, habitat restoration, conservation",
+    "popularity": 70,
+    "createdAt": "2026-02-14T03:43:57.505Z",
+    "metadata": {
+      "safety": "recommended",
+      "location": "outdoor",
+      "intensity": "medium",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": "service",
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "a9c2657e-7580-4f11-b562-89b051c66726",
+    "name": "Music & Worship Teams",
+    "category": "creative_cultural",
+    "description": "Playing instruments, leading worship, songwriting",
+    "popularity": 78,
+    "createdAt": "2026-02-14T03:43:57.589Z",
+    "metadata": {
+      "safety": "none",
+      "location": "indoor",
+      "intensity": "medium",
+      "commitment": "recurring",
+      "skillLevel": "intermediate",
+      "spiritualFocus": "worship",
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "ca625d7e-7dd5-4705-9d57-a002d18c4921",
+    "name": "Storytelling & Testimony",
+    "category": "creative_cultural",
+    "description": "Sharing stories, testimony nights, oral tradition",
+    "popularity": 72,
+    "createdAt": "2026-02-14T03:43:57.673Z",
+    "metadata": {
+      "safety": "none",
+      "location": "indoor",
+      "intensity": "low",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": "discipleship",
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "146b2966-4810-4845-ae58-10f5d02b6edc",
+    "name": "Film & Photography",
+    "category": "creative_cultural",
+    "description": "Photography outings, filmmaking, visual storytelling",
+    "popularity": 75,
+    "createdAt": "2026-02-14T03:43:57.759Z",
+    "metadata": {
+      "safety": "none",
+      "location": "hybrid",
+      "intensity": "low",
+      "commitment": "recurring",
+      "skillLevel": "intermediate",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "fc377ee8-1ad6-4a9a-a62f-a89875ddb20b",
+    "name": "Craft Circles (Leatherwork, Instruments)",
+    "category": "creative_cultural",
+    "description": "Craft groups, instrument building, traditional skills",
+    "popularity": 60,
+    "createdAt": "2026-02-14T03:43:57.853Z",
+    "metadata": {
+      "safety": "none",
+      "location": "indoor",
+      "intensity": "low",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "8527a90f-d118-49d3-af27-eac50e9bee01",
+    "name": "Theater & Performance Arts",
+    "category": "creative_cultural",
+    "description": "Acting, improv, drama ministry",
+    "popularity": 58,
+    "createdAt": "2026-02-14T03:43:57.941Z",
+    "metadata": {
+      "safety": "none",
+      "location": "indoor",
+      "intensity": "medium",
+      "commitment": "program",
+      "skillLevel": "beginner",
+      "spiritualFocus": "worship",
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "5d8ae292-60eb-4eb6-b0b3-14e76383b023",
+    "name": "Writing & Journaling",
+    "category": "creative_cultural",
+    "description": "Creative writing, blogging, reflective journaling",
+    "popularity": 68,
+    "createdAt": "2026-02-14T03:43:58.028Z",
+    "metadata": {
+      "safety": "none",
+      "location": "hybrid",
+      "intensity": "low",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "7fe2318e-6d45-41ad-8c83-5aa54bb10275",
+    "name": "Book Clubs & Literature",
+    "category": "creative_cultural",
+    "description": "Reading groups, theology books, literature discussion",
+    "popularity": 70,
+    "createdAt": "2026-02-14T03:43:58.116Z",
+    "metadata": {
+      "safety": "none",
+      "location": "indoor",
+      "intensity": "low",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": "discipleship",
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "b85ff1f7-ae06-4442-b58f-c410210b7eaf",
+    "name": "Skiing & Snowboarding",
+    "category": "outdoor_adventure",
+    "description": "Winter sports, backcountry skiing",
+    "popularity": 72,
+    "createdAt": "2026-02-14T03:43:58.201Z",
+    "metadata": {
+      "safety": "recommended",
+      "location": "outdoor",
+      "intensity": "high",
+      "commitment": "recurring",
+      "skillLevel": "intermediate",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "7ba7253a-de86-40a9-bf9e-71380d78b026",
+    "name": "Surfing & Water Sports",
+    "category": "outdoor_adventure",
+    "description": "Surfing, paddleboarding, kayaking",
+    "popularity": 68,
+    "createdAt": "2026-02-14T03:43:58.284Z",
+    "metadata": {
+      "safety": "recommended",
+      "location": "outdoor",
+      "intensity": "medium",
+      "commitment": "recurring",
+      "skillLevel": "intermediate",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "8e15b8e4-6a6d-4348-a695-27c2dbc0a028",
+    "name": "Mountain Biking",
+    "category": "outdoor_adventure",
+    "description": "Trail riding, downhill, cross-country MTB",
+    "popularity": 75,
+    "createdAt": "2026-02-14T03:43:58.369Z",
+    "metadata": {
+      "safety": "recommended",
+      "location": "outdoor",
+      "intensity": "high",
+      "commitment": "recurring",
+      "skillLevel": "intermediate",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "d47a1c7a-3697-479d-afcf-d14d7282e91a",
+    "name": "Yoga & Mindfulness",
+    "category": "physicality_combat_team_sports",
+    "description": "Yoga practice, meditation, breathwork",
+    "popularity": 70,
+    "createdAt": "2026-02-14T03:43:58.451Z",
+    "metadata": {
+      "safety": "none",
+      "location": "hybrid",
+      "intensity": "low",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "1b4337ef-d497-4803-aecf-dac9d9828e52",
+    "name": "Basketball & Pickup Games",
+    "category": "physicality_combat_team_sports",
+    "description": "Casual basketball, pickup leagues",
+    "popularity": 72,
+    "createdAt": "2026-02-14T03:43:58.538Z",
+    "metadata": {
+      "safety": "none",
+      "location": "outdoor",
+      "intensity": "medium",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "ad2b3635-7f8b-4300-b4f2-82b34daf8128",
+    "name": "Golf & Disc Golf",
+    "category": "physicality_combat_team_sports",
+    "description": "Traditional golf, disc golf, recreational rounds",
+    "popularity": 65,
+    "createdAt": "2026-02-14T03:43:58.623Z",
+    "metadata": {
+      "safety": "none",
+      "location": "outdoor",
+      "intensity": "low",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  },
+  {
+    "id": "aa7e2fb1-9898-4230-8ff1-7161b70ec124",
+    "name": "Coffee Roasting & Appreciation",
+    "category": "culinary_fire_food",
+    "description": "Home roasting, cupping, coffee culture",
+    "popularity": 68,
+    "createdAt": "2026-02-14T03:43:58.711Z",
+    "metadata": {
+      "safety": "none",
+      "location": "indoor",
+      "intensity": "low",
+      "commitment": "recurring",
+      "skillLevel": "beginner",
+      "spiritualFocus": null,
+      "trustRequirement": "open"
+    },
+    "subcategory": null
+  }
+]

@@ -1,0 +1,69 @@
+[
+  {
+    "id": "e4a2b55d-50f7-43de-b318-b48a68b5fabf",
+    "supabaseUserId": "140fc8de-7f52-4a11-9151-35a4decc5575",
+    "email": "gil.motina@servingtheking.com",
+    "displayName": "Gil Motina",
+    "latitude": null,
+    "longitude": null,
+    "onboardingLevel": 0,
+    "leadershipSignals": null,
+    "gamificationMeta": null,
+    "blockedPersons": [],
+    "safetyFlags": [],
+    "lastActiveAt": null,
+    "createdAt": "2026-02-14T03:16:09.365Z",
+    "updatedAt": "2026-02-14T03:16:09.365Z"
+  },
+  {
+    "id": "09f06405-cb2a-4f40-aa88-80bf3cf4b7bb",
+    "supabaseUserId": "02336647-42f2-4c0f-8b54-44ee9e7fb4d9",
+    "email": "paul.lau@servingtheking.com",
+    "displayName": "Paul Lau",
+    "latitude": null,
+    "longitude": null,
+    "onboardingLevel": 0,
+    "leadershipSignals": null,
+    "gamificationMeta": null,
+    "blockedPersons": [],
+    "safetyFlags": [],
+    "lastActiveAt": null,
+    "createdAt": "2026-02-14T03:16:10.055Z",
+    "updatedAt": "2026-02-14T03:16:10.055Z"
+  },
+  {
+    "id": "965cd6a1-c67b-4023-8974-7757806b9c6f",
+    "supabaseUserId": "c40e3e36-8407-4f9f-9b21-4e248ff35a72",
+    "email": "allen.chi@servingtheking.com",
+    "displayName": "Allen Chi",
+    "latitude": 51.1587901368536,
+    "longitude": -114.134082699182,
+    "onboardingLevel": 1,
+    "leadershipSignals": {
+      "hasAssets": false,
+      "willingness": "help_organize",
+      "notifyForNewGroups": true
+    },
+    "gamificationMeta": {
+      "rank": "Initiate",
+      "batteryLevel": 100,
+      "achievementsUnlocked": [
+        "field_mapped",
+        "archetype_steward",
+        "mode_workshop"
+      ],
+      "skillPointsAllocated": {
+        "Barbecue & Grilling": 1,
+        "Foraging & Wild Foods": 1,
+        "Cooking & Culinary Arts": 1,
+        "Butchery & Meat Processing": 1,
+        "Coffee Roasting & Appreciation": 1
+      }
+    },
+    "blockedPersons": [],
+    "safetyFlags": [],
+    "lastActiveAt": null,
+    "createdAt": "2026-02-14T03:16:10.518Z",
+    "updatedAt": "2026-02-14T12:11:30.704Z"
+  }
+]
