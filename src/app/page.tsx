@@ -150,9 +150,9 @@ export default async function Home() {
   const primaryCraft = isMentor ? primaryMentorCraft : primaryLearnerCraft
 
   // Extract data from Person model
-  const station = person.community || 'Your Community'
-  const city = person.city || 'Your City'
-  const region = person.region || 'Your Region'
+  const station = person.community || ''
+  const city = person.city || ''
+  const region = person.region || ''
   const archetypeName = person.archetype
 
   // Parallelize nearby count and huddle queries

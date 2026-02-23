@@ -24,9 +24,9 @@ export function CollapsibleSidebar({
   onStartJourney,
   onGroupsClick,
   highlightJourney = false,
-  station = 'Your Community',
-  city = 'Your City',
-  region = 'Your Region',
+  station = '',
+  city = '',
+  region = '',
   connectionStyle = 'Builders',
   latitude,
   longitude,
@@ -208,7 +208,7 @@ export function CollapsibleSidebar({
                 Your Community
               </div>
               <div className="text-gray-700 font-semibold text-xs">
-                {station && station !== 'Your Community' ? `${station} @ ` : ''}{city || 'Not set'}, {region || ''}
+                {station ? `${station} @ ` : ''}{city || 'Not set'}{region ? `, ${region}` : ''}
               </div>
             </div>
 
