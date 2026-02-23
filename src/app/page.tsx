@@ -63,11 +63,13 @@ export default async function Home() {
     )
   }
 
-  // Map interests for easier use
-  const interests = person.interests.map(pi => ({
-    ...pi.interest,
-    proficiencyLevel: pi.proficiencyLevel,
-  }))
+  // Map interests for easier use (filter out any with missing interest data)
+  const interests = person.interests
+    .filter(pi => pi.interest != null)
+    .map(pi => ({
+      ...pi.interest!,
+      proficiencyLevel: pi.proficiencyLevel,
+    }))
 
   // Format archetype name (e.g., "sage" -> "The Sage")
   const formatArchetype = (name: string | null): string => {

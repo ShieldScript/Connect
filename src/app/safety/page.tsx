@@ -33,8 +33,8 @@ export default async function SafetyPage() {
   }
 
   // Map interests for easier use
-  const interests = person.interests.map(pi => ({
-    ...pi.interest,
+  const interests = person.interests.filter(pi => pi.interest != null).map(pi => ({
+    ...pi.interest!,
     proficiencyLevel: pi.proficiencyLevel,
   }))
 

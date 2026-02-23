@@ -198,23 +198,25 @@ export default function DiscoveryClient({
                 radiusKm={selectedRadius}
                 userLat={userLocation.lat}
                 userLng={userLocation.lng}
-                persons={persons.map(m => ({
-                  id: m.person.id,
-                  displayName: m.person.displayName,
-                  location: m.person.latitude && m.person.longitude
-                    ? { latitude: m.person.latitude, longitude: m.person.longitude }
-                    : null,
-                  distanceKm: m.person.latitude && m.person.longitude
-                    ? calculateDistance(userLocation.lat, userLocation.lng, m.person.latitude, m.person.longitude)
-                    : 0,
-                  archetype: m.person.archetype || undefined,
-                  interests: m.person.interests?.map((pi: any) => ({
-                    name: pi.interest?.name || pi.name,
-                    proficiencyLevel: pi.proficiencyLevel,
-                  })) || [],
-                  bio: m.person.bio || undefined,
-                  connectionProtocol: m.person.connectionStyle || undefined,
-                }))}
+                persons={persons
+                  .filter(m => m && m.person != null)
+                  .map(m => ({
+                    id: m.person.id,
+                    displayName: m.person.displayName,
+                    location: m.person.latitude && m.person.longitude
+                      ? { latitude: m.person.latitude, longitude: m.person.longitude }
+                      : null,
+                    distanceKm: m.person.latitude && m.person.longitude
+                      ? calculateDistance(userLocation.lat, userLocation.lng, m.person.latitude, m.person.longitude)
+                      : 0,
+                    archetype: m.person.archetype || undefined,
+                    interests: m.person.interests?.map((pi: any) => ({
+                      name: pi.interest?.name || pi.name,
+                      proficiencyLevel: pi.proficiencyLevel,
+                    })) || [],
+                    bio: m.person.bio || undefined,
+                    connectionProtocol: m.person.connectionStyle || undefined,
+                  }))}
                 circles={physicalGatherings.map(g => ({
                   id: g.id,
                   name: g.name,

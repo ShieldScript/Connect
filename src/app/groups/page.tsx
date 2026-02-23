@@ -35,11 +35,13 @@ export default async function GroupsPage() {
     );
   }
 
-  // Map interests for easier use
-  const interests = person.interests.map((pi) => ({
-    ...pi.interest,
-    proficiencyLevel: pi.proficiencyLevel,
-  }));
+  // Map interests for easier use (filter out any with missing interest data)
+  const interests = person.interests
+    .filter((pi) => pi.interest != null)
+    .map((pi) => ({
+      ...pi.interest!,
+      proficiencyLevel: pi.proficiencyLevel,
+    }));
 
   // Calculate mentor status
   const mentorCount = interests.filter((pi) => pi.proficiencyLevel >= 4).length;
