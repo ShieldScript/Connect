@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { ChevronRight, Users2, Map, Hammer, Radio, MapPin, Bell, ArrowRight, Shield, Users } from 'lucide-react'
@@ -19,38 +20,37 @@ export default async function Home() {
       redirect('/login')
     }
 
-    const person = await prisma.person.findUnique({
-    where: { supabaseUserId: user.id },
-    include: {
-      interests: {
+    // Optimize: Fetch in parallel with shallow includes instead of deeply nested
+    const [person, personInterests, huddleMemberships] = await Promise.all([
+      // Query 1: Person data only
+      prisma.enrichedPerson.findUnique({
+        where: { supabaseUserId: user.id },
+      }),
+
+      // Query 2: Person interests with interest details (2 level include - acceptable)
+      prisma.personInterest.findMany({
+        where: {
+          person: { supabaseUserId: user.id },
+        },
         include: {
           interest: true,
         },
-      },
-      memberships: {
+      }),
+
+      // Query 3: Active huddle memberships
+      prisma.groupMembership.findMany({
         where: {
+          person: { supabaseUserId: user.id },
           status: 'ACTIVE',
           group: {
             category: 'HUDDLE',
           },
         },
-        include: {
-          group: {
-            include: {
-              memberships: {
-                where: { status: 'ACTIVE' },
-                take: 4,
-              },
-            },
-          },
-        },
         orderBy: {
           joinedAt: 'desc',
         },
-      },
-    },
-    // Include community and city fields
-  })
+      }),
+    ])
 
   if (!person) {
     // This could happen if they signed up via Supabase but the Prisma record failed
@@ -63,8 +63,51 @@ export default async function Home() {
     )
   }
 
+  // Fetch groups and their memberships in parallel
+  const groupIds = huddleMemberships.map(m => m.groupId)
+  const [groups, groupMemberships] = groupIds.length > 0
+    ? await Promise.all([
+        // Query 4: Fetch all groups
+        prisma.group.findMany({
+          where: { id: { in: groupIds } },
+        }),
+        // Query 5: Fetch all memberships for these groups
+        prisma.groupMembership.findMany({
+          where: {
+            groupId: { in: groupIds },
+            status: 'ACTIVE',
+          },
+          take: groupIds.length * 4, // Up to 4 members per group
+        }),
+      ])
+    : [[], []]
+
+  // Create lookup maps
+  const groupMap = new Map(groups.map(g => [g.id, g]))
+  const membershipsByGroup = new Map<string, typeof groupMemberships>()
+  for (const membership of groupMemberships) {
+    const existing = membershipsByGroup.get(membership.groupId) || []
+    if (existing.length < 4) {
+      existing.push(membership)
+      membershipsByGroup.set(membership.groupId, existing)
+    }
+  }
+
+  // Enrich person data with fetched relations
+  const enrichedPerson = {
+    ...person,
+    interests: personInterests,
+    memberships: huddleMemberships.map(m => ({
+      ...m,
+      group: {
+        ...groupMap.get(m.groupId)!,
+        memberships: membershipsByGroup.get(m.groupId) || [],
+      },
+    })),
+  }
+
   // Map interests for easier use (filter out any with missing interest data)
-  const interests = person.interests
+  const interests = enrichedPerson.interests
     .filter(pi => pi.interest != null)
     .map(pi => ({
       ...pi.interest!,
@@ -92,18 +135,18 @@ export default async function Home() {
   const primaryCraft = isMentor ? primaryMentorCraft : primaryLearnerCraft
 
   // Extract data from Person model
-  const station = person.community || 'Your Community'
-  const city = person.city || 'Your City'
-  const region = person.region || 'Your Region'
-  const archetypeName = person.archetype
+  const station = enrichedPerson.community || 'Your Community'
+  const city = enrichedPerson.city || 'Your City'
+  const region = enrichedPerson.region || 'Your Region'
+  const archetypeName = enrichedPerson.archetype
 
   // Parallelize nearby count and huddle queries
-  const savedRadius = person.proximityRadiusKm || 5;
+  const savedRadius = enrichedPerson.proximityRadiusKm || 5;
 
   const [nearbyCount, myHuddles] = await Promise.all([
     // Query 1: Nearby count with timeout
     (async () => {
-      if (!person.latitude || !person.longitude) return 0;
+      if (!enrichedPerson.latitude || !enrichedPerson.longitude) return 0;
       try {
         const nearbyPersons = await Promise.race([
           prisma.$queryRaw<any[]>`
@@ -113,11 +156,11 @@ export default async function Home() {
               p."onboardingLevel" >= 1
               AND ST_DWithin(
                 p.location::geography,
-                ST_SetSRID(ST_MakePoint(${person.longitude}, ${person.latitude}), 4326)::geography,
+                ST_SetSRID(ST_MakePoint(${enrichedPerson.longitude}, ${enrichedPerson.latitude}), 4326)::geography,
                 ${savedRadius * 1000}
               )
               AND p.location IS NOT NULL
-              AND p.id != ${person.id}
+              AND p.id != ${enrichedPerson.id}
           `,
           new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Query timeout')), 5000)
@@ -132,9 +175,9 @@ export default async function Home() {
 
     // Query 2: Huddles with aggregated unread counts
     (async () => {
-      if (person.memberships.length === 0) return [];
+      if (enrichedPerson.memberships.length === 0) return [];
 
-      const huddleIds = person.memberships.map(m => m.groupId);
+      const huddleIds = enrichedPerson.memberships.map(m => m.groupId);
 
       try {
         // Single aggregated query for all unread counts
@@ -147,9 +190,9 @@ export default async function Home() {
             INNER JOIN "GroupMembership" gm ON gm."groupId" = hm."huddleId"
             WHERE
               hm."huddleId" = ANY(ARRAY[${Prisma.join(huddleIds)}]::text[])
-              AND hm."senderId" != ${person.id}
+              AND hm."senderId" != ${enrichedPerson.id}
               AND hm."deletedAt" IS NULL
-              AND gm."personId" = ${person.id}
+              AND gm."personId" = ${enrichedPerson.id}
               AND hm."createdAt" > COALESCE(gm."lastReadAt", gm."joinedAt", '1970-01-01'::timestamp)
             GROUP BY hm."huddleId"
           `,
@@ -160,7 +203,7 @@ export default async function Home() {
 
         const countMap = new Map(unreadCounts.map(c => [c.huddleId, c.count]));
 
-        return person.memberships.map((membership, idx) => {
+        return enrichedPerson.memberships.map((membership, idx) => {
           // TEMPORARY: Simulate unread badges for testing
           const actualUnread = countMap.get(membership.groupId) || 0;
           const simulatedUnreadCount = idx === 0 ? 3 : idx === 1 ? 12 : actualUnread;
@@ -173,7 +216,7 @@ export default async function Home() {
         });
       } catch (error) {
         console.error('Error fetching huddle unread counts:', error);
-        return person.memberships.map(membership => ({
+        return enrichedPerson.memberships.map(membership => ({
           ...membership.group,
           unreadCount: 0,
           membershipId: membership.id,
@@ -188,8 +231,8 @@ export default async function Home() {
     'fireside': 'The Fireside',
     'outpost': 'Bridge',
   }
-  const connectionStyle = person.connectionStyle
-    ? (connectionStyleMap[person.connectionStyle] || 'Builders')
+  const connectionStyle = enrichedPerson.connectionStyle
+    ? (connectionStyleMap[enrichedPerson.connectionStyle] || 'Builders')
     : 'Builders'
 
   // Sort: unread first, then by most recent activity
@@ -201,10 +244,10 @@ export default async function Home() {
 
     return (
       <DashboardClient
-        personId={person.id}
-        displayName={person.displayName}
-        email={person.email}
-        onboardingLevel={person.onboardingLevel}
+        personId={enrichedPerson.id}
+        displayName={enrichedPerson.displayName}
+        email={enrichedPerson.email}
+        onboardingLevel={enrichedPerson.onboardingLevel}
         isMentor={isMentor}
         archetypeName={archetypeName || ''}
         primaryCraftName={primaryCraft?.name}
@@ -212,12 +255,12 @@ export default async function Home() {
         city={city}
         region={region}
         connectionStyle={connectionStyle}
-        latitude={person.latitude || undefined}
-        longitude={person.longitude || undefined}
+        latitude={enrichedPerson.latitude || undefined}
+        longitude={enrichedPerson.longitude || undefined}
       >
       <main className="min-h-screen bg-white">
         {/* Preview State - Blurred Groups (Only when not onboarded) */}
-        {person.onboardingLevel === 0 ? (
+        {enrichedPerson.onboardingLevel === 0 ? (
           <div className="flex items-center justify-center min-h-[calc(100vh-56px)]">
             <div className="relative w-full max-w-6xl px-8">
               {/* Blurred Preview Content */}
@@ -276,7 +319,7 @@ export default async function Home() {
                     Welcome Back,
                   </h1>
                   <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                    {person.displayName}
+                    {enrichedPerson.displayName}
                   </h2>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-bold text-gray-700 uppercase tracking-wide">Archetype:</span>
@@ -306,9 +349,9 @@ export default async function Home() {
             {/* Brothers Discovery - Mini-Card Layout */}
             <FellowsSection
               station={station}
-              currentUserLat={person.latitude || 0}
-              currentUserLng={person.longitude || 0}
-              savedRadius={person.proximityRadiusKm || 5}
+              currentUserLat={enrichedPerson.latitude || 0}
+              currentUserLng={enrichedPerson.longitude || 0}
+              savedRadius={enrichedPerson.proximityRadiusKm || 5}
             />
 
             {/* My Huddles - Horizontal Scroll */}
