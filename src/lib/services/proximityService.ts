@@ -106,32 +106,14 @@ export async function findGroupsNearby(
   },
   limit: number = 50
 ): Promise<GroupNearby[]> {
-  // Build WHERE conditions
-  const conditions: string[] = [
-    `g.status = 'ACTIVE'`,
-    `g."isPublic" = true`,
-    `ST_DWithin(
-      g.location::geography,
-      ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography,
-      ${radiusKm * 1000}
-    )`,
-    `g.location IS NOT NULL`,
-  ];
+  // Build filter conditions for both physical and virtual groups
+  const typeFilter = filters?.type ? Prisma.sql`AND g.type = ${filters.type}` : Prisma.empty;
+  const minSizeFilter = filters?.minSize !== undefined ? Prisma.sql`AND g."currentSize" >= ${filters.minSize}` : Prisma.empty;
+  const maxSizeFilter = filters?.maxSize !== undefined ? Prisma.sql`AND g."currentSize" <= ${filters.maxSize}` : Prisma.empty;
 
-  if (filters?.type) {
-    conditions.push(`g.type = '${filters.type}'`);
-  }
-
-  if (filters?.minSize !== undefined) {
-    conditions.push(`g."currentSize" >= ${filters.minSize}`);
-  }
-
-  if (filters?.maxSize !== undefined) {
-    conditions.push(`g."currentSize" <= ${filters.maxSize}`);
-  }
-
-  const whereClause = conditions.join(' AND ');
-
+  // Query combines:
+  // 1. Nearby physical groups (with location, within radius)
+  // 2. All virtual groups (no location required, accessible from anywhere)
   const groups = await prisma.$queryRaw<GroupNearby[]>`
     SELECT
       g.id,
@@ -150,14 +132,35 @@ export async function findGroupsNearby(
       g.status,
       g."createdBy",
       p."displayName" as "creatorName",
-      ST_Distance(
-        g.location::geography,
-        ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography
-      ) / 1000 as "distanceKm"
+      COALESCE(
+        ST_Distance(
+          g.location::geography,
+          ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography
+        ) / 1000,
+        9999
+      ) as "distanceKm"
     FROM "Group" g
     LEFT JOIN "Person" p ON g."createdBy" = p.id
-    WHERE ${Prisma.raw(whereClause)}
-    ORDER BY "distanceKm" ASC
+    WHERE
+      g.status = 'ACTIVE'
+      AND g."isPublic" = true
+      AND g.category != 'HUDDLE'
+      AND (
+        (
+          g."isVirtual" = false
+          AND g.location IS NOT NULL
+          AND ST_DWithin(
+            g.location::geography,
+            ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography,
+            ${radiusKm * 1000}
+          )
+        )
+        OR g."isVirtual" = true
+      )
+      ${typeFilter}
+      ${minSizeFilter}
+      ${maxSizeFilter}
+    ORDER BY g."isVirtual" ASC, "distanceKm" ASC
     LIMIT ${limit}
   `;
 
