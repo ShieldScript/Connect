@@ -34,7 +34,7 @@ interface FellowsSectionProps {
 export function FellowsSection({ station, currentUserLat, currentUserLng, savedRadius = 5 }: FellowsSectionProps) {
   const [radiusMenuOpen, setRadiusMenuOpen] = useState(false);
   const [selectedRadius, setSelectedRadius] = useState(savedRadius);
-  const [isScanning, setIsScanning] = useState(false);
+  const [isSavingRadius, setIsSavingRadius] = useState(false);
   const [selectedFellow, setSelectedFellow] = useState<Fellow | null>(null);
   const [fellows, setFellows] = useState<Fellow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -84,7 +84,7 @@ export function FellowsSection({ station, currentUserLat, currentUserLng, savedR
 
   const handleRadiusChange = async (radius: number) => {
     const previousRadius = selectedRadius;
-    setIsScanning(true);
+    setIsSavingRadius(true);
     setSelectedRadius(radius);
     setRadiusMenuOpen(false);
 
@@ -108,12 +108,9 @@ export function FellowsSection({ station, currentUserLat, currentUserLng, savedR
       toast.error('Failed to save radius preference');
       // Rollback on error
       setSelectedRadius(previousRadius);
+    } finally {
+      setIsSavingRadius(false);
     }
-
-    // Show scanning for minimum 600ms for UX feedback
-    setTimeout(() => {
-      setIsScanning(false);
-    }, 600);
   };
 
   // Show first 4 brothers in horizontal scroll (Proximity Filter: focused, intentional connections)
@@ -279,9 +276,10 @@ export function FellowsSection({ station, currentUserLat, currentUserLng, savedR
           <div className="relative">
             <button
               onClick={() => setRadiusMenuOpen(!radiusMenuOpen)}
-              className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-full text-xs font-semibold text-gray-700 transition border border-gray-300"
+              disabled={isSavingRadius}
+              className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-full text-xs font-semibold text-gray-700 transition border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isScanning ? 'Scanning...' : `${selectedRadius}km`}
+              {isSavingRadius ? 'Saving...' : `${selectedRadius}km`}
               <ChevronDown className="w-3 h-3" strokeWidth={2} />
             </button>
 
