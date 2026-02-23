@@ -3,6 +3,7 @@ import { getCurrentUser } from '@/lib/middleware/auth';
 import { getPersonBySupabaseId } from '@/lib/services/personService';
 import { findCompatibleGroups } from '@/lib/services/compatibilityEngine';
 import { prisma } from '@/lib/prisma';
+import { cache, CACHE_TTL } from '@/lib/cache';
 import { z } from 'zod';
 
 /**
@@ -55,7 +56,21 @@ export async function GET(request: NextRequest) {
 
     const { limit = 20, minScore = 0.3 } = validationResult.data;
 
-    // Find compatible groups
+    // Create cache key based on user and search parameters
+    const cacheKey = `group-matches:${person.id}:${limit}:${minScore}`;
+
+    // Check cache first (5 min TTL)
+    const cachedMatches = cache.get<any[]>(cacheKey, CACHE_TTL.PROFILE);
+
+    if (cachedMatches !== null) {
+      return NextResponse.json({
+        matches: cachedMatches,
+        count: cachedMatches.length,
+        searchParams: { limit, minScore },
+      });
+    }
+
+    // Cache miss - compute compatibility
     const compatibilityResults = await findCompatibleGroups(person.id, {
       limit,
       minScore,
@@ -147,6 +162,9 @@ export async function GET(request: NextRequest) {
       .filter((m): m is NonNullable<typeof m> => m !== null);
 
     const filteredMatches = matches;
+
+    // Store in cache for future requests
+    cache.set(cacheKey, filteredMatches);
 
     return NextResponse.json({
       matches: filteredMatches,
