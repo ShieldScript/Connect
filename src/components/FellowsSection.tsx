@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Map, Hammer, Shield, Compass, BookOpen, Eye, Wrench, ArrowRight, ChevronDown, Heart, Sparkles, Tent, Laugh, HandHeart, Crown, Users, Lightbulb, Palette } from 'lucide-react';
 import { ProtocolModal } from './ProtocolModal';
+import toast from 'react-hot-toast';
 
 interface Fellow {
   id: string;
@@ -82,21 +83,31 @@ export function FellowsSection({ station, currentUserLat, currentUserLng, savedR
   const allFellows = fellows;
 
   const handleRadiusChange = async (radius: number) => {
+    const previousRadius = selectedRadius;
     setIsScanning(true);
     setSelectedRadius(radius);
     setRadiusMenuOpen(false);
 
     // Save to database
     try {
-      await fetch('/api/persons/me/update-profile', {
+      const response = await fetch('/api/persons/me/update-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           proximityRadiusKm: radius,
         }),
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to save radius');
+      }
+
+      toast.success(`Search radius updated to ${radius}km`);
     } catch (err) {
       console.error('Failed to save radius preference:', err);
+      toast.error('Failed to save radius preference');
+      // Rollback on error
+      setSelectedRadius(previousRadius);
     }
 
     // Show scanning for minimum 600ms for UX feedback
