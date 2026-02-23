@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Settings, RotateCcw, X } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface DevMenuProps {
   personId: string;
@@ -36,10 +37,11 @@ export function DevMenu({ personId, currentOnboardingLevel }: DevMenuProps) {
       localStorage.removeItem('sidebar-open');
 
       // Reload page
+      toast.success('Onboarding reset successfully!');
       window.location.reload();
     } catch (error) {
       console.error('Error resetting onboarding:', error);
-      alert('Failed to reset onboarding. Check console for details.');
+      toast.error('Failed to reset onboarding. Check console for details.');
       setIsResetting(false);
     }
   };

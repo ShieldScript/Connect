@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Shield, Users, Info } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export function CreateGroupClient() {
   const searchParams = useSearchParams();
@@ -54,10 +55,11 @@ export function CreateGroupClient() {
       }
 
       const data = await res.json();
+      toast.success(`${isHuddle ? 'Huddle' : 'Circle'} created successfully!`);
       router.push(`/groups/${data.group.id}`);
     } catch (err: any) {
       console.error('Failed to create group:', err);
-      alert(err.message || 'Failed to create group');
+      toast.error(err.message || 'Failed to create group');
       setLoading(false);
     }
   };
