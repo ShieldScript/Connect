@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
+import { cache, CACHE_TTL } from '@/lib/cache'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { ChevronRight, Users2, Map, Hammer, Radio, MapPin, Bell, ArrowRight, Shield, Users } from 'lucide-react'
@@ -159,80 +160,89 @@ export default async function Home() {
   const savedRadius = person.proximityRadiusKm || 5;
 
   const [nearbyCount, myHuddles, recentPrayers] = await Promise.all([
-    // Query 1: Nearby count with timeout
+    // Query 1: Nearby count with PostgreSQL function + caching (5 min TTL)
     (async () => {
       if (!person.latitude || !person.longitude) return 0;
+
+      // Check cache first
+      const cacheKey = `nearby:${person.id}:${savedRadius}`;
+      const cached = cache.get<number>(cacheKey, CACHE_TTL.NEARBY_COUNT);
+      if (cached !== null) {
+        return cached;
+      }
+
+      // Cache miss - query database using PostgreSQL function
       try {
-        const nearbyPersons = await Promise.race([
-          prisma.$queryRaw<any[]>`
-            SELECT COUNT(*) as count
-            FROM "Person" p
-            WHERE
-              p."onboardingLevel" >= 1
-              AND ST_DWithin(
-                p.location::geography,
-                ST_SetSRID(ST_MakePoint(${person.longitude}, ${person.latitude}), 4326)::geography,
-                ${savedRadius * 1000}
-              )
-              AND p.location IS NOT NULL
-              AND p.id != ${person.id}
+        const result = await Promise.race([
+          prisma.$queryRaw<Array<{ get_nearby_count: number }>>`
+            SELECT get_nearby_count(
+              ${person.latitude}::double precision,
+              ${person.longitude}::double precision,
+              ${savedRadius}::double precision,
+              ${person.id}::text
+            ) as get_nearby_count
           `,
           new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Query timeout')), 5000)
           )
-        ]) as any[];
-        return Number(nearbyPersons[0]?.count || 0);
+        ]) as Array<{ get_nearby_count: number }>;
+
+        const count = Number(result[0]?.get_nearby_count || 0);
+
+        // Store in cache
+        cache.set(cacheKey, count);
+
+        return count;
       } catch (error) {
         console.error('Error fetching nearby count:', error);
         return 0;
       }
     })(),
 
-    // Query 2: Huddles with aggregated unread counts
+    // Query 2: Huddles with unread counts using PostgreSQL function
     (async () => {
       if (person.memberships.length === 0) return [];
 
-      const huddleIds = person.memberships.map(m => m.groupId);
-
       try {
-        // Single aggregated query for all unread counts
-        // Build UNION ALL query - production safe (no Prisma.join!)
-        const queries = huddleIds.map(id => `
-          SELECT
-            '${id}'::text as "huddleId",
-            COUNT(*)::int as count
-          FROM "HuddleMessage" hm
-          INNER JOIN "GroupMembership" gm ON gm."groupId" = hm."huddleId"
-          WHERE
-            hm."huddleId" = '${id}'
-            AND hm."senderId" != '${person.id}'
-            AND hm."deletedAt" IS NULL
-            AND gm."personId" = '${person.id}'
-            AND hm."createdAt" > COALESCE(gm."lastReadAt", gm."joinedAt", '1970-01-01'::timestamp)
-        `).join(' UNION ALL ')
+        // Query all unread counts in parallel using PostgreSQL function
+        const unreadCountPromises = person.memberships.map(async (membership) => {
+          const cacheKey = `unread:${membership.groupId}:${person.id}`;
+          const cached = cache.get<number>(cacheKey, CACHE_TTL.UNREAD_COUNT);
 
-        const unreadCounts = await Promise.race([
-          prisma.$queryRawUnsafe<Array<{ huddleId: string; count: number }>>(queries),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Huddles query timeout')), 10000)
-          )
-        ]) as Array<{ huddleId: string; count: number }>;
+          if (cached !== null) {
+            return { huddleId: membership.groupId, count: cached };
+          }
 
-        // Use plain object instead of Map for production safety
-        const countMap: Record<string, number> = {}
-        unreadCounts.forEach(c => { countMap[c.huddleId] = c.count })
+          // Cache miss - query using PostgreSQL function
+          try {
+            const result = await prisma.$queryRaw<Array<{ get_unread_huddle_count: number }>>`
+              SELECT get_unread_huddle_count(
+                ${membership.groupId}::text,
+                ${person.id}::text
+              ) as get_unread_huddle_count
+            `;
 
-        return person.memberships.map((membership, idx) => {
-          // TEMPORARY: Simulate unread badges for testing
-          const actualUnread = countMap[membership.groupId] || 0;
-          const simulatedUnreadCount = idx === 0 ? 3 : idx === 1 ? 12 : actualUnread;
+            const count = Number(result[0]?.get_unread_huddle_count || 0);
+            cache.set(cacheKey, count);
 
-          return {
-            ...membership.group,
-            unreadCount: simulatedUnreadCount,
-            membershipId: membership.id,
-          };
+            return { huddleId: membership.groupId, count };
+          } catch (err) {
+            console.error(`Error fetching unread count for huddle ${membership.groupId}:`, err);
+            return { huddleId: membership.groupId, count: 0 };
+          }
         });
+
+        const unreadCounts = await Promise.all(unreadCountPromises);
+
+        // Build lookup map
+        const countMap: Record<string, number> = {};
+        unreadCounts.forEach(c => { countMap[c.huddleId] = c.count });
+
+        return person.memberships.map((membership) => ({
+          ...membership.group,
+          unreadCount: countMap[membership.groupId] || 0,
+          membershipId: membership.id,
+        }));
       } catch (error) {
         console.error('Error fetching huddle unread counts:', error);
         return person.memberships.map(membership => ({
