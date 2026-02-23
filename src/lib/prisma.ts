@@ -4,9 +4,10 @@ import { Pool } from 'pg';
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
-// Use MIGRATION_URL (direct connection, port 5432) for server-side queries
-// This has full PostgreSQL features and better for complex queries
-const connectionString = process.env.MIGRATION_URL || process.env.DATABASE_URL;
+// Use DATABASE_URL (transaction pooling, port 6543) for serverless
+// Transaction pooling supports high concurrency and is designed for serverless
+// RLS is disabled, so transaction pooling works fine now
+const connectionString = process.env.DATABASE_URL;
 const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
 
