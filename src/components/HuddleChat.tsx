@@ -205,7 +205,7 @@ export function HuddleChat({ huddleId, personId, personName }: HuddleChatProps) 
             </p>
           </div>
         ) : (
-          messages.map((message) => {
+          messages.filter(m => m && m.id && m.sender).map((message) => {
             const isOwnMessage = message.senderId === personId;
             return (
               <div
@@ -219,7 +219,7 @@ export function HuddleChat({ huddleId, personId, personName }: HuddleChatProps) 
                       message.senderId
                     )}`}
                   >
-                    {getInitials(message.sender.displayName)}
+                    {getInitials(message.sender?.displayName || 'Unknown')}
                   </div>
                 )}
 

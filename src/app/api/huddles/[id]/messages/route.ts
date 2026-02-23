@@ -43,23 +43,36 @@ export async function GET(
       );
     }
 
-    // 3. Fetch messages (last 100)
-    const messages = await prisma.huddleMessage.findMany({
+    // 3. Fetch messages (last 100) without includes to avoid RLS issues
+    const rawMessages = await prisma.huddleMessage.findMany({
       where: {
         huddleId: id,
         deletedAt: null,
       },
-      include: {
-        sender: {
-          select: {
-            id: true,
-            displayName: true,
-          },
-        },
-      },
       orderBy: { createdAt: 'asc' },
       take: 100,
     });
+
+    // 4. Fetch sender data separately
+    const senderIds = [...new Set(rawMessages.map(m => m.senderId))];
+    const senders = await prisma.person.findMany({
+      where: { id: { in: senderIds } },
+      select: {
+        id: true,
+        displayName: true,
+      },
+    });
+
+    // 5. Map senders by ID
+    const senderMap = new Map(senders.map(s => [s.id, s]));
+
+    // 6. Attach sender data to messages
+    const messages = rawMessages
+      .map(m => ({
+        ...m,
+        sender: senderMap.get(m.senderId) || { id: m.senderId, displayName: 'Unknown' },
+      }))
+      .filter(m => m.sender.displayName !== 'Unknown'); // Filter out messages with missing senders
 
     return NextResponse.json({ messages });
   }, { requireOnboarding: true });
@@ -124,22 +137,23 @@ export async function POST(
       );
     }
 
-    // 3. Create message
-    const message = await prisma.huddleMessage.create({
+    // 3. Create message (without include to avoid RLS issues)
+    const newMessage = await prisma.huddleMessage.create({
       data: {
         huddleId: id,
         senderId: person.id,
         content: content.trim(),
       },
-      include: {
-        sender: {
-          select: {
-            id: true,
-            displayName: true,
-          },
-        },
-      },
     });
+
+    // 4. Attach sender data manually
+    const message = {
+      ...newMessage,
+      sender: {
+        id: person.id,
+        displayName: person.displayName,
+      },
+    };
 
     return NextResponse.json({ message }, { status: 201 });
   }, { requireOnboarding: true });
