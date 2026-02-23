@@ -11,14 +11,15 @@ import { PrayerWallPreview } from '@/components/PrayerWallPreview'
 export const dynamic = 'force-dynamic'
 
 export default async function Home() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
-    redirect('/login')
-  }
+    if (!user) {
+      redirect('/login')
+    }
 
-  const person = await prisma.person.findUnique({
+    const person = await prisma.person.findUnique({
     where: { supabaseUserId: user.id },
     include: {
       interests: {
@@ -161,22 +162,22 @@ export default async function Home() {
     return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
   });
 
-  return (
-    <DashboardClient
-      personId={person.id}
-      displayName={person.displayName}
-      email={person.email}
-      onboardingLevel={person.onboardingLevel}
-      isMentor={isMentor}
-      archetypeName={archetypeName || ''}
-      primaryCraftName={primaryCraft?.name}
-      station={station}
-      city={city}
-      region={region}
-      connectionStyle={connectionStyle}
-      latitude={person.latitude || undefined}
-      longitude={person.longitude || undefined}
-    >
+    return (
+      <DashboardClient
+        personId={person.id}
+        displayName={person.displayName}
+        email={person.email}
+        onboardingLevel={person.onboardingLevel}
+        isMentor={isMentor}
+        archetypeName={archetypeName || ''}
+        primaryCraftName={primaryCraft?.name}
+        station={station}
+        city={city}
+        region={region}
+        connectionStyle={connectionStyle}
+        latitude={person.latitude || undefined}
+        longitude={person.longitude || undefined}
+      >
       <main className="min-h-screen bg-white">
         {/* Preview State - Blurred Groups (Only when not onboarded) */}
         {person.onboardingLevel === 0 ? (
@@ -383,9 +384,24 @@ export default async function Home() {
                 </Link>
               </div>
             </section>
-        </div>
-      )}
-    </main>
-  </DashboardClient>
-  )
+          </div>
+        )}
+      </main>
+    </DashboardClient>
+    )
+  } catch (error) {
+    console.error('Error loading dashboard:', error)
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <h1 className="text-2xl font-bold text-red-600 mb-4">Error Loading Dashboard</h1>
+        <p className="text-gray-600 mb-2">An error occurred while loading your dashboard.</p>
+        <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto max-w-2xl">
+          {error instanceof Error ? error.message : String(error)}
+        </pre>
+        <Link href="/login" className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+          Return to Login
+        </Link>
+      </div>
+    )
+  }
 }
