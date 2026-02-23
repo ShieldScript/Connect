@@ -83,7 +83,7 @@ export function DiscoveryFeed({
     if (!searchQuery) return persons;
     const query = searchQuery.toLowerCase();
     return persons.filter((p) => {
-      const displayName = p.person?.displayName || p.displayName || '';
+      const displayName = p.displayName || '';
       return displayName.toLowerCase().includes(query);
     });
   }, [persons, searchQuery]);
@@ -113,10 +113,10 @@ export function DiscoveryFeed({
     return circles;
   }, [allCircles, searchQuery, circleFilter]);
 
-  // Sort by distance (online circles without distance go to end)
+  // Sort by distance
   const sortedPersons = [...filteredPersons].sort((a, b) => {
-    const aScore = a.proximityScore || a.distanceKm || 0;
-    const bScore = b.proximityScore || b.distanceKm || 0;
+    const aScore = a.distanceKm || 0;
+    const bScore = b.distanceKm || 0;
     return aScore - bScore;
   });
   const sortedCircles = [...filteredCircles].sort((a, b) => {
@@ -168,11 +168,9 @@ export function DiscoveryFeed({
                 {searchQuery ? 'No brothers match your search.' : 'No brothers in range.'}
               </div>
             )}
-            {sortedPersons.map((match) => {
-              // Support both PersonMatchResult and nearby persons
-              const person = match.person || match;
+            {sortedPersons.map((person) => {
               const personId = person.id;
-              const distance = match.proximityScore || match.distanceKm || 0;
+              const distance = person.distanceKm || 0;
               const isExpanded = expandedPersonId === personId;
 
               const interests = (person.interests || []).map((pi: any) => ({

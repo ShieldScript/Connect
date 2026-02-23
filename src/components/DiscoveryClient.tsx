@@ -65,7 +65,7 @@ export default function DiscoveryClient({
   useEffect(() => {
     console.log('🔍 DiscoveryClient - Raw data from hook:', {
       personsCount: persons.length,
-      personsWithPerson: persons.filter(m => m && m.person != null).length,
+      personsWithLocation: persons.filter(p => p.latitude && p.longitude).length,
       physicalGatheringsCount: physicalGatherings.length,
       digitalGatheringsCount: digitalGatherings.length,
       firstPerson: persons[0],
@@ -111,8 +111,7 @@ export default function DiscoveryClient({
 
   // Event handlers
   const handleFellowClick = (person: any) => {
-    // Handle both PersonMatchResult (from /api/matches/persons) and nearby persons
-    const personId = person.person?.id || person.id;
+    const personId = person.id;
     setSelectedItemId(personId);
     // Clear selection after a brief moment to remove highlight
     setTimeout(() => setSelectedItemId(null), 100);
@@ -212,23 +211,23 @@ export default function DiscoveryClient({
                 userLng={userLocation.lng}
                 persons={(() => {
                   const mappedPersons = persons
-                    .filter(m => m && m.person != null)
-                    .map(m => ({
-                      id: m.person.id,
-                      displayName: m.person.displayName,
-                      location: m.person.latitude && m.person.longitude
-                        ? { latitude: m.person.latitude, longitude: m.person.longitude }
+                    .filter(p => p != null)
+                    .map(p => ({
+                      id: p.id,
+                      displayName: p.displayName,
+                      location: p.latitude && p.longitude
+                        ? { latitude: p.latitude, longitude: p.longitude }
                         : null,
-                      distanceKm: m.person.latitude && m.person.longitude
-                        ? calculateDistance(userLocation.lat, userLocation.lng, m.person.latitude, m.person.longitude)
-                        : 0,
-                      archetype: m.person.archetype || undefined,
-                      interests: m.person.interests?.map((pi: any) => ({
+                      distanceKm: p.distanceKm || (p.latitude && p.longitude
+                        ? calculateDistance(userLocation.lat, userLocation.lng, p.latitude, p.longitude)
+                        : 0),
+                      archetype: p.archetype || undefined,
+                      interests: p.interests?.map((pi: any) => ({
                         name: pi.interest?.name || pi.name,
                         proficiencyLevel: pi.proficiencyLevel,
                       })) || [],
-                      bio: m.person.bio || undefined,
-                      connectionProtocol: m.person.connectionStyle || undefined,
+                      bio: p.bio || undefined,
+                      connectionProtocol: p.connectionStyle || undefined,
                     }));
                   console.log('📍 Persons being sent to map:', {
                     total: mappedPersons.length,
