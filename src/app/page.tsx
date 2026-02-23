@@ -404,10 +404,10 @@ export default async function Home() {
             />
 
             {/* My Huddles - Horizontal Scroll */}
-            {displayHuddles.length > 0 && (
-              <section className="mb-8">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-bold text-gray-900 uppercase tracking-wide">My Huddles</h2>
+            <section className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-gray-900 uppercase tracking-wide">My Huddles</h2>
+                {displayHuddles.length > 0 && (
                   <Link
                     href="/huddles"
                     className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
@@ -415,9 +415,11 @@ export default async function Home() {
                     View All Huddles
                     <ArrowRight className="w-4 h-4" />
                   </Link>
-                </div>
+                )}
+              </div>
 
-                {/* Horizontal Scroll Container */}
+              {displayHuddles.length > 0 ? (
+                // Horizontal Scroll Container
                 <div className="flex gap-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                   {displayHuddles.map((huddle) => (
                     <Link
@@ -448,8 +450,22 @@ export default async function Home() {
                     </Link>
                   ))}
                 </div>
-              </section>
-            )}
+              ) : (
+                // Empty State
+                <div className="bg-white border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                  <div className="w-12 h-12 bg-green-100 rounded-full mx-auto mb-3 flex items-center justify-center">
+                    <Shield className="w-6 h-6 text-green-600" strokeWidth={2} />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-3">Join Your First Huddle</h3>
+                  <Link
+                    href="/huddles"
+                    className="inline-flex items-center justify-center px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition"
+                  >
+                    Browse Huddles
+                  </Link>
+                </div>
+              )}
+            </section>
 
             {/* Prayer Wall Preview */}
             <PrayerWallPreview prayers={recentPrayers} />

@@ -36,8 +36,6 @@ export function PrayerWallPreview({ prayers }: PrayerWallPreviewProps) {
     return text.slice(0, maxLength) + '...';
   };
 
-  if (prayers.length === 0) return null;
-
   return (
     <section className="mb-8">
       <div className="flex items-center justify-between mb-4">
@@ -47,18 +45,21 @@ export function PrayerWallPreview({ prayers }: PrayerWallPreviewProps) {
             Prayer Wall
           </h2>
         </div>
-        <Link
-          href="/prayers"
-          className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
-        >
-          View All Prayers
-          <ArrowRight className="w-4 h-4" />
-        </Link>
+        {prayers.length > 0 && (
+          <Link
+            href="/prayers"
+            className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+          >
+            View All Prayers
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        )}
       </div>
 
-      {/* Horizontal Scroll Container */}
-      <div className="flex gap-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        {prayers.map((prayer) => (
+      {prayers.length > 0 ? (
+        // Horizontal Scroll Container
+        <div className="flex gap-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          {prayers.map((prayer) => (
           <Link
             key={prayer.id}
             href="/prayers"
@@ -98,7 +99,22 @@ export function PrayerWallPreview({ prayers }: PrayerWallPreviewProps) {
             </div>
           </Link>
         ))}
-      </div>
+        </div>
+      ) : (
+        // Empty State
+        <div className="bg-white border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+          <div className="w-12 h-12 bg-blue-100 rounded-full mx-auto mb-3 flex items-center justify-center">
+            <HandHeart className="w-6 h-6 text-blue-600" strokeWidth={2} />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mb-3">Start the Prayer Wall</h3>
+          <Link
+            href="/prayers"
+            className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
+          >
+            Post First Prayer
+          </Link>
+        </div>
+      )}
     </section>
   );
 }
