@@ -50,7 +50,7 @@ function createPersonIcon(isHovered: boolean, isSelected: boolean) {
       <div class="relative flex items-center justify-center">
         ${isHovered ? '<div class="absolute inset-0 w-6 h-6 bg-slate-500/30 rounded-full animate-ping"></div>' : ''}
         <div class="w-${size === 12 ? '3' : '2'} h-${size === 12 ? '3' : '2'} bg-slate-500 ${
-          isSelected || isHovered ? 'ring-2 ring-white' : ''
+          isSelected ? 'ring-2 ring-slate-700' : isHovered ? 'ring-2 ring-slate-400' : ''
         } rounded-full shadow-lg transition-all" style="width: ${size}px; height: ${size}px;"></div>
       </div>
     `,
@@ -69,7 +69,7 @@ function createCircleIcon(isHovered: boolean, isSelected: boolean) {
       <div class="relative flex items-center justify-center">
         ${isHovered ? '<div class="absolute inset-0 w-6 h-6 bg-amber-500/30 rotate-45 animate-ping"></div>' : ''}
         <div class="w-${size === 12 ? '3' : '2'} h-${size === 12 ? '3' : '2'} bg-amber-500 ${
-          isSelected || isHovered ? 'ring-2 ring-white' : ''
+          isSelected ? 'ring-2 ring-amber-700' : isHovered ? 'ring-2 ring-amber-400' : ''
         } rotate-45 shadow-lg transition-all" style="width: ${size}px; height: ${size}px;"></div>
       </div>
     `,
