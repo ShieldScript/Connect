@@ -170,19 +170,26 @@ export function RadialCompassMapCartoDB({
   }, [currentZoom, userLat, userLng]);
 
   // Prepare all marker positions with clustering offsets
+  const personsWithLocation = persons.filter((p) => p.location?.latitude && p.location?.longitude);
+  const circlesWithLocation = circles.filter((c) => c.latitude && c.longitude);
+
+  // Log for debugging
+  console.log('Map data:', {
+    totalPersons: persons.length,
+    personsWithLocation: personsWithLocation.length,
+    totalCircles: circles.length,
+    circlesWithLocation: circlesWithLocation.length
+  });
+
   const allMarkers = [
-    ...persons
-      .filter((p) => p.location?.latitude && p.location?.longitude)
-      .map((p) => ({
+    ...personsWithLocation.map((p) => ({
         id: p.id,
         lat: p.location!.latitude,
         lng: p.location!.longitude,
         type: 'person' as const,
         data: p,
       })),
-    ...circles
-      .filter((c) => c.latitude && c.longitude)
-      .map((c) => ({
+    ...circlesWithLocation.map((c) => ({
         id: c.id,
         lat: c.latitude!,
         lng: c.longitude!,
@@ -225,11 +232,11 @@ export function RadialCompassMapCartoDB({
       <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-6 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-lg border border-gray-200 shadow-sm z-[1000]">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-slate-500 rounded-full"></div>
-          <span className="text-xs font-medium text-gray-700">Brothers ({persons.length})</span>
+          <span className="text-xs font-medium text-gray-700">Brothers ({personsWithLocation.length})</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-amber-500 rotate-45"></div>
-          <span className="text-xs font-medium text-gray-700">Circles ({circles.length})</span>
+          <span className="text-xs font-medium text-gray-700">Circles ({circlesWithLocation.length})</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="relative w-4 h-4 flex items-center justify-center">

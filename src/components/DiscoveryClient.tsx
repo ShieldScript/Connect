@@ -61,6 +61,18 @@ export default function DiscoveryClient({
     setGatherings,
   } = useDiscoveryData({ userLocation, selectedRadius });
 
+  // DEBUG: Log raw data from hook
+  useEffect(() => {
+    console.log('🔍 DiscoveryClient - Raw data from hook:', {
+      personsCount: persons.length,
+      personsWithPerson: persons.filter(m => m && m.person != null).length,
+      physicalGatheringsCount: physicalGatherings.length,
+      digitalGatheringsCount: digitalGatherings.length,
+      firstPerson: persons[0],
+      firstGathering: physicalGatherings[0],
+    });
+  }, [persons, physicalGatherings, digitalGatherings]);
+
   // Check for edit query parameter on mount
   useEffect(() => {
     const editId = searchParams.get('edit');
@@ -198,42 +210,58 @@ export default function DiscoveryClient({
                 radiusKm={selectedRadius}
                 userLat={userLocation.lat}
                 userLng={userLocation.lng}
-                persons={persons
-                  .filter(m => m && m.person != null)
-                  .map(m => ({
-                    id: m.person.id,
-                    displayName: m.person.displayName,
-                    location: m.person.latitude && m.person.longitude
-                      ? { latitude: m.person.latitude, longitude: m.person.longitude }
-                      : null,
-                    distanceKm: m.person.latitude && m.person.longitude
-                      ? calculateDistance(userLocation.lat, userLocation.lng, m.person.latitude, m.person.longitude)
+                persons={(() => {
+                  const mappedPersons = persons
+                    .filter(m => m && m.person != null)
+                    .map(m => ({
+                      id: m.person.id,
+                      displayName: m.person.displayName,
+                      location: m.person.latitude && m.person.longitude
+                        ? { latitude: m.person.latitude, longitude: m.person.longitude }
+                        : null,
+                      distanceKm: m.person.latitude && m.person.longitude
+                        ? calculateDistance(userLocation.lat, userLocation.lng, m.person.latitude, m.person.longitude)
+                        : 0,
+                      archetype: m.person.archetype || undefined,
+                      interests: m.person.interests?.map((pi: any) => ({
+                        name: pi.interest?.name || pi.name,
+                        proficiencyLevel: pi.proficiencyLevel,
+                      })) || [],
+                      bio: m.person.bio || undefined,
+                      connectionProtocol: m.person.connectionStyle || undefined,
+                    }));
+                  console.log('📍 Persons being sent to map:', {
+                    total: mappedPersons.length,
+                    withLocation: mappedPersons.filter(p => p.location?.latitude && p.location?.longitude).length,
+                    firstPerson: mappedPersons[0],
+                  });
+                  return mappedPersons;
+                })()}
+                circles={(() => {
+                  const mappedCircles = physicalGatherings.map(g => ({
+                    id: g.id,
+                    name: g.name,
+                    type: g.type,
+                    latitude: g.latitude,
+                    longitude: g.longitude,
+                    distanceKm: g.latitude && g.longitude
+                      ? calculateDistance(userLocation.lat, userLocation.lng, g.latitude, g.longitude)
                       : 0,
-                    archetype: m.person.archetype || undefined,
-                    interests: m.person.interests?.map((pi: any) => ({
-                      name: pi.interest?.name || pi.name,
-                      proficiencyLevel: pi.proficiencyLevel,
-                    })) || [],
-                    bio: m.person.bio || undefined,
-                    connectionProtocol: m.person.connectionStyle || undefined,
-                  }))}
-                circles={physicalGatherings.map(g => ({
-                  id: g.id,
-                  name: g.name,
-                  type: g.type,
-                  latitude: g.latitude,
-                  longitude: g.longitude,
-                  distanceKm: g.latitude && g.longitude
-                    ? calculateDistance(userLocation.lat, userLocation.lng, g.latitude, g.longitude)
-                    : 0,
-                  currentSize: g.currentSize,
-                  maxSize: g.maxSize,
-                  description: g.description,
-                  protocol: g.protocol,
-                  tags: g.tags,
-                  creatorName: g.creator?.displayName,
-                  createdBy: g.createdBy,
-                }))}
+                    currentSize: g.currentSize,
+                    maxSize: g.maxSize,
+                    description: g.description,
+                    protocol: g.protocol,
+                    tags: g.tags,
+                    creatorName: g.creator?.displayName,
+                    createdBy: g.createdBy,
+                  }));
+                  console.log('📍 Circles being sent to map:', {
+                    total: mappedCircles.length,
+                    withLocation: mappedCircles.filter(c => c.latitude && c.longitude).length,
+                    firstCircle: mappedCircles[0],
+                  });
+                  return mappedCircles;
+                })()}
                 hoveredItemId={hoveredItemId}
                 selectedItemId={selectedItemId}
                 onPinHover={setHoveredItemId}
