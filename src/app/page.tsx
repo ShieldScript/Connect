@@ -95,27 +95,35 @@ export default async function Home() {
   const region = person.region || 'Your Region'
   const archetypeName = person.archetype
 
-  // Fetch nearby count using saved radius
+  // Fetch nearby count using saved radius with timeout
   const savedRadius = person.proximityRadiusKm || 5;
   let nearbyCount = 0
   if (person.latitude && person.longitude) {
     try {
-      const nearbyPersons = await prisma.$queryRaw<any[]>`
-        SELECT COUNT(*) as count
-        FROM "Person" p
-        WHERE
-          p."onboardingLevel" >= 1
-          AND ST_DWithin(
-            p.location::geography,
-            ST_SetSRID(ST_MakePoint(${person.longitude}, ${person.latitude}), 4326)::geography,
-            ${savedRadius * 1000}
-          )
-          AND p.location IS NOT NULL
-          AND p.id != ${person.id}
-      `
+      // Add timeout to prevent long-running queries
+      const nearbyPersons = await Promise.race([
+        prisma.$queryRaw<any[]>`
+          SELECT COUNT(*) as count
+          FROM "Person" p
+          WHERE
+            p."onboardingLevel" >= 1
+            AND ST_DWithin(
+              p.location::geography,
+              ST_SetSRID(ST_MakePoint(${person.longitude}, ${person.latitude}), 4326)::geography,
+              ${savedRadius * 1000}
+            )
+            AND p.location IS NOT NULL
+            AND p.id != ${person.id}
+        `,
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Query timeout')), 5000)
+        )
+      ]) as any[];
       nearbyCount = Number(nearbyPersons[0]?.count || 0)
     } catch (error) {
       console.error('Error fetching nearby count:', error)
+      // Default to 0 if query fails or times out
+      nearbyCount = 0
     }
   }
 
@@ -129,31 +137,52 @@ export default async function Home() {
     ? (connectionStyleMap[person.connectionStyle] || 'Builders')
     : 'Builders'
 
-  // Fetch huddles with unread message counts
-  const myHuddles = await Promise.all(
-    person.memberships.map(async (membership, idx) => {
-      // Count unread messages (messages newer than lastReadAt)
-      const unreadCount = await prisma.huddleMessage.count({
-        where: {
-          huddleId: membership.groupId,
-          senderId: { not: person.id }, // Don't count own messages
-          createdAt: {
-            gt: membership.lastReadAt || membership.joinedAt || new Date(0),
-          },
-          deletedAt: null,
-        },
-      });
+  // Fetch huddles with unread message counts (with timeout)
+  const myHuddles = await Promise.race([
+    Promise.all(
+      person.memberships.map(async (membership, idx) => {
+        try {
+          // Count unread messages (messages newer than lastReadAt)
+          const unreadCount = await prisma.huddleMessage.count({
+            where: {
+              huddleId: membership.groupId,
+              senderId: { not: person.id }, // Don't count own messages
+              createdAt: {
+                gt: membership.lastReadAt || membership.joinedAt || new Date(0),
+              },
+              deletedAt: null,
+            },
+          });
 
-      // TEMPORARY: Simulate unread badges for testing
-      const simulatedUnreadCount = idx === 0 ? 3 : idx === 1 ? 12 : unreadCount;
+          // TEMPORARY: Simulate unread badges for testing
+          const simulatedUnreadCount = idx === 0 ? 3 : idx === 1 ? 12 : unreadCount;
 
-      return {
-        ...membership.group,
-        unreadCount: simulatedUnreadCount,
-        membershipId: membership.id,
-      };
-    })
-  );
+          return {
+            ...membership.group,
+            unreadCount: simulatedUnreadCount,
+            membershipId: membership.id,
+          };
+        } catch (error) {
+          console.error('Error fetching huddle unread count:', error);
+          return {
+            ...membership.group,
+            unreadCount: 0,
+            membershipId: membership.id,
+          };
+        }
+      })
+    ),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Huddles query timeout')), 10000)
+    )
+  ]).catch(() => {
+    // If timeout, return basic huddle info without unread counts
+    return person.memberships.map(membership => ({
+      ...membership.group,
+      unreadCount: 0,
+      membershipId: membership.id,
+    }));
+  }) as any[];
 
   // Sort: unread first, then by most recent activity
   myHuddles.sort((a, b) => {
