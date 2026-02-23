@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Menu, MoreVertical, Settings, HelpCircle, Shield, LogOut } from 'lucide-react';
 import { NotificationBell } from './NotificationBell';
 
@@ -55,14 +56,14 @@ export function TopBar({ displayName, email, personId, onToggleSidebar, onboardi
             <>
               <div className="fixed inset-0 z-10" onClick={() => setShowHelpMenu(false)} />
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
-                <a href="/help" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <Link href="/help" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                   <HelpCircle className="w-4 h-4" strokeWidth={2} />
                   Help & Support
-                </a>
-                <a href="/privacy" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                </Link>
+                <Link href="/privacy" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                   <Shield className="w-4 h-4" strokeWidth={2} />
                   Privacy Policy
-                </a>
+                </Link>
                 <div className="border-t border-gray-100 mt-1 pt-1">
                   <div className="px-4 py-2 text-xs text-gray-500">
                     Version 0.1.0
@@ -91,10 +92,10 @@ export function TopBar({ displayName, email, personId, onToggleSidebar, onboardi
                   <p className="text-sm font-semibold text-gray-900">{displayName}</p>
                   <p className="text-xs text-gray-500 truncate">{email}</p>
                 </div>
-                <a href="/profile" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <Link href="/profile" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                   <Settings className="w-4 h-4" strokeWidth={2} />
                   Account Settings
-                </a>
+                </Link>
                 <form action="/auth/signout" method="post">
                   <button
                     type="submit"

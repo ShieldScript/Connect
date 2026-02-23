@@ -1,6 +1,7 @@
 'use client';
 
-import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { LayoutDashboard, Map, User, Lock, Shield, HandHeart } from 'lucide-react';
 import { JourneyProgress } from './JourneyProgress';
 
@@ -31,7 +32,6 @@ export function CollapsibleSidebar({
   latitude,
   longitude,
 }: CollapsibleSidebarProps) {
-  const router = useRouter();
   const pathname = usePathname();
   const isOnboarding = onboardingLevel === 0;
 
@@ -51,7 +51,7 @@ export function CollapsibleSidebar({
     >
       {/* Primary Navigation */}
       <nav className={`px-3 py-6 space-y-2 ${!isOnboarding ? 'flex-1' : ''}`}>
-        <a
+        <Link
           href="/"
           className={`flex items-center gap-3 px-3 py-3 rounded-lg transition focus:outline-none ${
             isActive('/')
@@ -67,9 +67,9 @@ export function CollapsibleSidebar({
           <span className={`${!isOpen ? 'hidden' : ''} ${isActive('/') ? 'text-white' : ''}`}>
             Dashboard
           </span>
-        </a>
+        </Link>
 
-        <a
+        <Link
           href="/groups"
           className={`flex items-center gap-3 px-3 py-3 rounded-lg transition relative focus:outline-none ${
             isActive('/groups')
@@ -89,9 +89,9 @@ export function CollapsibleSidebar({
           {onboardingLevel === 0 && (
             <Lock className={`w-4 h-4 text-blue-600 ${!isOpen ? 'hidden' : 'ml-auto'}`} strokeWidth={2} />
           )}
-        </a>
+        </Link>
 
-        <a
+        <Link
           href="/huddles"
           className={`flex items-center gap-3 px-3 py-3 rounded-lg transition relative focus:outline-none ${
             isActive('/huddles')
@@ -111,9 +111,9 @@ export function CollapsibleSidebar({
           {onboardingLevel === 0 && (
             <Lock className={`w-4 h-4 text-blue-600 ${!isOpen ? 'hidden' : 'ml-auto'}`} strokeWidth={2} />
           )}
-        </a>
+        </Link>
 
-        <a
+        <Link
           href="/prayers"
           className={`flex items-center gap-3 px-3 py-3 rounded-lg transition relative focus:outline-none ${
             isActive('/prayers')
@@ -133,9 +133,9 @@ export function CollapsibleSidebar({
           {onboardingLevel === 0 && (
             <Lock className={`w-4 h-4 text-blue-600 ${!isOpen ? 'hidden' : 'ml-auto'}`} strokeWidth={2} />
           )}
-        </a>
+        </Link>
 
-        <a
+        <Link
           href="/profile"
           className={`flex items-center gap-3 px-3 py-3 rounded-lg transition focus:outline-none ${
             isActive('/profile')
@@ -151,7 +151,7 @@ export function CollapsibleSidebar({
           <span className={`${!isOpen ? 'hidden' : ''} ${isActive('/profile') ? 'text-white' : ''}`}>
             My Profile
           </span>
-        </a>
+        </Link>
       </nav>
 
       {/* Journey Progress - Only show during onboarding */}
