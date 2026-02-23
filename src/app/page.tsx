@@ -19,49 +19,107 @@ export default async function Home() {
       redirect('/login')
     }
 
-    const person = await prisma.person.findUnique({
-    where: { supabaseUserId: user.id },
-    include: {
-      interests: {
-        include: {
-          interest: true,
-        },
-      },
-      memberships: {
-        where: {
-          status: 'ACTIVE',
-          group: {
-            category: 'HUDDLE',
-          },
-        },
-        include: {
-          group: {
-            include: {
-              memberships: {
-                where: { status: 'ACTIVE' },
-                take: 4,
-              },
-            },
-          },
-        },
-        orderBy: {
-          joinedAt: 'desc',
-        },
-      },
-    },
-    // Include community and city fields
-  })
+    // OPTIMIZATION: Fetch in parallel instead of deeply nested includes
+    // Step 1: Get person and their relations separately
+    const [basePerson, personInterests, personMemberships] = await Promise.all([
+      // Get person data only
+      prisma.person.findUnique({
+        where: { supabaseUserId: user.id },
+      }),
 
-  if (!person) {
-    // This could happen if they signed up via Supabase but the Prisma record failed
-    // Or if we're in a weird state.
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <h1 className="text-2xl font-bold">Finishing Setup...</h1>
-        <p>Please wait while we set up your profile.</p>
-      </div>
-    )
-  }
+      // Get person's interests (will join with Interest table next)
+      prisma.personInterest.findMany({
+        where: { person: { supabaseUserId: user.id } },
+      }),
+
+      // Get person's active huddle memberships
+      prisma.groupMembership.findMany({
+        where: {
+          person: { supabaseUserId: user.id },
+          status: 'ACTIVE',
+        },
+        orderBy: { joinedAt: 'desc' },
+      }),
+    ])
+
+    if (!basePerson) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen p-4">
+          <h1 className="text-2xl font-bold">Finishing Setup...</h1>
+          <p>Please wait while we set up your profile.</p>
+        </div>
+      )
+    }
+
+    // Step 2: Fetch related data in parallel
+    const interestIds = personInterests.map(pi => pi.interestId)
+    const membershipGroupIds = personMemberships.map(m => m.groupId)
+
+    const [interestRecords, groups] = await Promise.all([
+      // Get all interests
+      interestIds.length > 0
+        ? prisma.interest.findMany({ where: { id: { in: interestIds } } })
+        : Promise.resolve([]),
+
+      // Get all groups (will filter to huddles)
+      membershipGroupIds.length > 0
+        ? prisma.group.findMany({
+            where: {
+              id: { in: membershipGroupIds },
+              category: 'HUDDLE',
+            },
+          })
+        : Promise.resolve([]),
+    ])
+
+    // Step 3: Get memberships for each huddle group
+    const huddleGroupIds = groups.map(g => g.id)
+    const groupMemberships = huddleGroupIds.length > 0
+      ? await prisma.groupMembership.findMany({
+          where: {
+            groupId: { in: huddleGroupIds },
+            status: 'ACTIVE',
+          },
+        })
+      : []
+
+    // Step 4: Reconstruct the exact data structure the UI expects
+    // Build lookups using plain objects (production-safe)
+    const interestLookup: Record<string, any> = {}
+    interestRecords.forEach(i => { interestLookup[i.id] = i })
+
+    const groupLookup: Record<string, any> = {}
+    groups.forEach(g => { groupLookup[g.id] = g })
+
+    const membershipsByGroupId: Record<string, any[]> = {}
+    groupMemberships.forEach(m => {
+      if (!membershipsByGroupId[m.groupId]) {
+        membershipsByGroupId[m.groupId] = []
+      }
+      if (membershipsByGroupId[m.groupId].length < 4) {
+        membershipsByGroupId[m.groupId].push(m)
+      }
+    })
+
+    // Create person object with exact same structure as nested include would produce
+    const person = {
+      ...basePerson,
+      // Reconstruct person.interests array with nested interest object
+      interests: personInterests.map(pi => ({
+        ...pi,
+        interest: interestLookup[pi.interestId] || null,
+      })),
+      // Reconstruct person.memberships array with nested group object
+      memberships: personMemberships
+        .filter(m => groupLookup[m.groupId]) // Only include huddle memberships
+        .map(m => ({
+          ...m,
+          group: {
+            ...groupLookup[m.groupId],
+            memberships: membershipsByGroupId[m.groupId] || [],
+          },
+        })),
+    }
 
   // Map interests for easier use (filter out any with missing interest data)
   const interests = person.interests
@@ -160,11 +218,13 @@ export default async function Home() {
           )
         ]) as Array<{ huddleId: string; count: number }>;
 
-        const countMap = new Map(unreadCounts.map(c => [c.huddleId, c.count]));
+        // Use plain object instead of Map for production safety
+        const countMap: Record<string, number> = {}
+        unreadCounts.forEach(c => { countMap[c.huddleId] = c.count })
 
         return person.memberships.map((membership, idx) => {
           // TEMPORARY: Simulate unread badges for testing
-          const actualUnread = countMap.get(membership.groupId) || 0;
+          const actualUnread = countMap[membership.groupId] || 0;
           const simulatedUnreadCount = idx === 0 ? 3 : idx === 1 ? 12 : actualUnread;
 
           return {
