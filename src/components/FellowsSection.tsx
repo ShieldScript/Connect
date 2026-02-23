@@ -39,12 +39,17 @@ export function FellowsSection({ station, currentUserLat, currentUserLng, savedR
   const [selectedFellow, setSelectedFellow] = useState<Fellow | null>(null);
   const [fellows, setFellows] = useState<Fellow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
   // Fetch nearby fellows from API
   useEffect(() => {
     async function fetchFellows() {
-      setIsLoading(true);
+      // Only show skeleton on initial load, not on radius change
+      if (!hasLoadedOnce) {
+        setIsLoading(true);
+      }
       setIsScanning(true);
+
       try {
         const response = await fetch(
           `/api/persons/nearby?lat=${currentUserLat}&lng=${currentUserLng}&radius=${selectedRadius}&limit=50`
@@ -71,6 +76,7 @@ export function FellowsSection({ station, currentUserLat, currentUserLng, savedR
         }));
 
         setFellows(transformedFellows);
+        setHasLoadedOnce(true);
       } catch (error) {
         console.error('Error fetching nearby fellows:', error);
         setFellows([]);
@@ -273,7 +279,9 @@ export function FellowsSection({ station, currentUserLat, currentUserLng, savedR
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <h2 className="text-lg font-bold text-gray-900 uppercase tracking-wide">Brothers Nearby</h2>
-          <span className="text-sm text-gray-500">({allFellows.length})</span>
+          <span className="text-sm text-gray-500">
+            {isScanning ? 'Loading...' : `(${allFellows.length})`}
+          </span>
 
           {/* Radius Dropdown Pill */}
           <div className="relative">
