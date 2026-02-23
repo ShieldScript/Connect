@@ -23,7 +23,7 @@ export default async function Home() {
     // Optimize: Fetch in parallel with shallow includes instead of deeply nested
     const [person, personInterests, huddleMemberships] = await Promise.all([
       // Query 1: Person data only
-      prisma.enrichedPerson.findUnique({
+      prisma.person.findUnique({
         where: { supabaseUserId: user.id },
       }),
 
