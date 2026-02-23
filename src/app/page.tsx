@@ -84,7 +84,7 @@ export default async function Home() {
 
   // Create lookup maps
   const groupMap = new Map(groups.map(g => [g.id, g]))
-  const membershipsByGroup = new Map<string, typeof groupMemberships>()
+  const membershipsByGroup = new Map()
   for (const membership of groupMemberships) {
     const existing = membershipsByGroup.get(membership.groupId) || []
     if (existing.length < 4) {
@@ -97,13 +97,17 @@ export default async function Home() {
   const enrichedPerson = {
     ...person,
     interests: personInterests,
-    memberships: huddleMemberships.map(m => ({
-      ...m,
-      group: {
-        ...groupMap.get(m.groupId)!,
-        memberships: membershipsByGroup.get(m.groupId) || [],
-      },
-    })),
+    memberships: huddleMemberships.map(m => {
+      const group = groupMap.get(m.groupId)
+      if (!group) return null
+      return {
+        ...m,
+        group: {
+          ...group,
+          memberships: membershipsByGroup.get(m.groupId) || [],
+        },
+      }
+    }).filter((m): m is NonNullable<typeof m> => m !== null),
   }
 
   // Map interests for easier use (filter out any with missing interest data)
