@@ -22,6 +22,20 @@ export interface PersonNearby {
   distanceKm: number;
   latitude: number | null;
   longitude: number | null;
+  archetype: string | null;
+  connectionStyle: string | null;
+  blockedPersons: string[];
+  interests?: Array<{
+    id: string;
+    interestId: string;
+    personId: string;
+    proficiencyLevel: string | null;
+    interest: {
+      id: string;
+      name: string;
+      category: string | null;
+    };
+  }>;
 }
 
 export interface GroupNearby {
@@ -56,9 +70,9 @@ export async function findPersonsNearby(
 
   const blockedPersons = currentUser?.blockedPersons || [];
 
-  // PostGIS proximity query
+  // PostGIS proximity query with interests included via JOIN
   // Using ST_Distance for distance calculation and ST_DWithin for filtering
-  const persons = await prisma.$queryRaw<PersonNearby[]>`
+  const persons = await prisma.$queryRaw<any[]>`
     SELECT
       p.id,
       p."displayName",
@@ -66,11 +80,32 @@ export async function findPersonsNearby(
       p.bio,
       p.latitude,
       p.longitude,
+      p.archetype,
+      p."connectionStyle",
+      p."blockedPersons",
+      COALESCE(
+        json_agg(
+          DISTINCT jsonb_build_object(
+            'id', pi.id,
+            'interestId', pi."interestId",
+            'personId', pi."personId",
+            'proficiencyLevel', pi."proficiencyLevel",
+            'interest', jsonb_build_object(
+              'id', i.id,
+              'name', i.name,
+              'category', i.category
+            )
+          )
+        ) FILTER (WHERE i.id IS NOT NULL),
+        '[]'::json
+      ) as interests,
       ST_Distance(
         p.location::geography,
         ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography
       ) / 1000 as "distanceKm"
     FROM "Person" p
+    LEFT JOIN "PersonInterest" pi ON pi."personId" = p.id
+    LEFT JOIN "Interest" i ON i.id = pi."interestId"
     WHERE
       p."onboardingLevel" >= 1
       AND ST_DWithin(
@@ -81,6 +116,7 @@ export async function findPersonsNearby(
       AND p.id != ${currentUserId}
       ${blockedPersons.length > 0 ? Prisma.sql`AND NOT (p.id = ANY(ARRAY[${Prisma.join(blockedPersons)}]::text[]))` : Prisma.empty}
       AND p.location IS NOT NULL
+    GROUP BY p.id, p.location
     ORDER BY "distanceKm" ASC
     LIMIT ${limit}
   `;
@@ -88,6 +124,7 @@ export async function findPersonsNearby(
   return persons.map((p) => ({
     ...p,
     distanceKm: Number(p.distanceKm), // Ensure it's a number
+    interests: Array.isArray(p.interests) ? p.interests : [],
   }));
 }
 

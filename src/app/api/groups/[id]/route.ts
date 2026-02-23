@@ -26,25 +26,9 @@ export async function GET(
 
     const { id: groupId } = await params;
 
-    // Fetch the group with creator info
+    // Fetch the group (without includes to avoid RLS issues)
     const group = await prisma.group.findUnique({
       where: { id: groupId },
-      include: {
-        memberships: {
-          include: {
-            person: {
-              select: {
-                id: true,
-                displayName: true,
-                archetype: true,
-              },
-            },
-          },
-          where: {
-            status: 'ACTIVE',
-          },
-        },
-      },
     });
 
     if (!group) {
@@ -54,27 +38,54 @@ export async function GET(
       );
     }
 
-    // Calculate distance if location exists
-    let distanceKm = null;
-    if (group.latitude && group.longitude && person.latitude && person.longitude) {
-      const result = await prisma.$queryRaw<Array<{ distanceKm: number }>>`
-        SELECT ST_Distance(
-          ST_SetSRID(ST_MakePoint(${group.longitude}, ${group.latitude}), 4326)::geography,
-          ST_SetSRID(ST_MakePoint(${person.longitude}, ${person.latitude}), 4326)::geography
-        ) / 1000 as "distanceKm"
-      `;
-      distanceKm = result[0]?.distanceKm || null;
-    }
+    // Fetch memberships and creator in parallel
+    const [memberships, creator, distanceResult] = await Promise.all([
+      // Fetch active memberships
+      prisma.groupMembership.findMany({
+        where: {
+          groupId: group.id,
+          status: 'ACTIVE',
+        },
+      }),
+      // Fetch creator
+      prisma.person.findUnique({
+        where: { id: group.createdBy },
+        select: { displayName: true, id: true },
+      }),
+      // Calculate distance if location exists
+      (group.latitude && group.longitude && person.latitude && person.longitude)
+        ? prisma.$queryRaw<Array<{ distanceKm: number }>>`
+            SELECT ST_Distance(
+              ST_SetSRID(ST_MakePoint(${group.longitude}, ${group.latitude}), 4326)::geography,
+              ST_SetSRID(ST_MakePoint(${person.longitude}, ${person.latitude}), 4326)::geography
+            ) / 1000 as "distanceKm"
+          `
+        : Promise.resolve(null)
+    ]);
 
-    // Get creator name
-    const creator = await prisma.person.findUnique({
-      where: { id: group.createdBy },
-      select: { displayName: true },
-    });
+    // Fetch membership persons separately
+    const memberPersonIds = memberships.map(m => m.personId);
+    const memberPersons = memberPersonIds.length > 0
+      ? await prisma.person.findMany({
+          where: { id: { in: memberPersonIds } },
+          select: { id: true, displayName: true, archetype: true },
+        })
+      : [];
+
+    const memberPersonMap = new Map(memberPersons.map(p => [p.id, p]));
+
+    // Map memberships with person data
+    const enrichedMemberships = memberships.map(m => ({
+      ...m,
+      person: memberPersonMap.get(m.personId) || { id: m.personId, displayName: 'Unknown', archetype: null },
+    }));
+
+    const distanceKm = distanceResult?.[0]?.distanceKm || null;
 
     return NextResponse.json({
       group: {
         ...group,
+        memberships: enrichedMemberships,
         distanceKm,
         creatorName: creator?.displayName || 'Unknown',
       },

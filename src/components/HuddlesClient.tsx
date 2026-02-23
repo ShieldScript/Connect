@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Shield, Users, MessageSquare, Plus, ChevronRight, Search, ChevronDown } from 'lucide-react';
 import { HuddleChat } from './HuddleChat';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 
 interface HuddlesClientProps {
   personId: string;
@@ -14,8 +15,10 @@ interface HuddlesClientProps {
 
 export function HuddlesClient({ personId, personName, myHuddles, availableHuddles }: HuddlesClientProps) {
   const [activeTab, setActiveTab] = useState<'my-huddles' | 'discover'>('my-huddles');
+  const [localMyHuddles, setLocalMyHuddles] = useState(myHuddles);
+  const [localAvailableHuddles, setLocalAvailableHuddles] = useState(availableHuddles);
   const [selectedHuddleId, setSelectedHuddleId] = useState<string | null>(
-    myHuddles.length > 0 ? myHuddles[0].id : null
+    localMyHuddles.length > 0 ? myHuddles[0].id : null
   );
   const [discoveryModalHuddle, setDiscoveryModalHuddle] = useState<any | null>(null);
   const [myHuddleDetailsModal, setMyHuddleDetailsModal] = useState<any | null>(null);
@@ -24,10 +27,19 @@ export function HuddlesClient({ personId, personName, myHuddles, availableHuddle
   const [selectedPersonProfile, setSelectedPersonProfile] = useState<any | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
-  const selectedHuddle = myHuddles.find(h => h.id === selectedHuddleId);
+  const selectedHuddle = localMyHuddles.find(h => h.id === selectedHuddleId);
 
   const handleJoinHuddle = async (huddleId: string) => {
     setIsJoining(true);
+
+    // Find the huddle
+    const huddle = localAvailableHuddles.find(h => h.id === huddleId);
+    if (!huddle) {
+      toast.error('Huddle not found');
+      setIsJoining(false);
+      return;
+    }
+
     try {
       const res = await fetch(`/api/groups/${huddleId}/join`, {
         method: 'POST',
@@ -38,10 +50,22 @@ export function HuddlesClient({ personId, personName, myHuddles, availableHuddle
         throw new Error(error.error || 'Failed to join huddle');
       }
 
-      // Success - reload page to show in My Huddles
-      window.location.reload();
+      // Optimistic update - add to my huddles
+      const newHuddle = { ...huddle, unreadCount: 0, membershipId: 'temp' };
+      setLocalMyHuddles(prev => [...prev, newHuddle]);
+      setLocalAvailableHuddles(prev => prev.filter(h => h.id !== huddleId));
+
+      // Show success feedback
+      toast.success(`Joined ${huddle.name}!`);
+
+      // Switch to my huddles tab and select the new huddle
+      setDiscoveryModalHuddle(null);
+      setActiveTab('my-huddles');
+      setSelectedHuddleId(newHuddle.id);
+
     } catch (err: any) {
-      alert(err.message || 'Failed to join huddle');
+      toast.error(err.message || 'Failed to join huddle');
+    } finally {
       setIsJoining(false);
     }
   };
@@ -55,7 +79,7 @@ export function HuddlesClient({ personId, personName, myHuddles, availableHuddle
       const profile = await res.json();
       setSelectedPersonProfile(profile);
     } catch (err: any) {
-      alert(err.message || 'Failed to load profile');
+      toast.error(err.message || 'Failed to load profile');
     } finally {
       setIsLoadingProfile(false);
     }
@@ -109,7 +133,7 @@ export function HuddlesClient({ personId, personName, myHuddles, availableHuddle
                 ? 'bg-green-100 text-green-600'
                 : 'bg-gray-100 text-gray-500'
             }`}>
-              {myHuddles.length}
+              {localMyHuddles.length}
             </span>
           </button>
           <button
@@ -133,7 +157,7 @@ export function HuddlesClient({ personId, personName, myHuddles, availableHuddle
                 ? 'bg-green-100 text-green-600'
                 : 'bg-gray-100 text-gray-500'
             }`}>
-              {availableHuddles.length}
+              {localAvailableHuddles.length}
             </span>
           </button>
         </div>
@@ -142,7 +166,7 @@ export function HuddlesClient({ personId, personName, myHuddles, availableHuddle
       {/* Main Content */}
       <div className="p-8">
         {activeTab === 'my-huddles' ? (
-          myHuddles.length === 0 ? (
+          localMyHuddles.length === 0 ? (
             /* Empty State */
             <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
               <Shield className="w-20 h-20 text-gray-300 mb-4" />
@@ -255,7 +279,7 @@ export function HuddlesClient({ personId, personName, myHuddles, availableHuddle
                     {/* Dropdown content */}
                     <div className="absolute top-full left-0 mt-2 w-full bg-white border-2 border-green-200 rounded-lg shadow-xl z-20 max-h-[500px] overflow-y-auto">
                       <div className="p-2">
-                        {myHuddles.map((huddle) => {
+                        {localMyHuddles.map((huddle) => {
                           const isSelected = huddle.id === selectedHuddleId;
                           const memberCount = huddle.memberships?.length || 0;
 
@@ -338,7 +362,7 @@ export function HuddlesClient({ personId, personName, myHuddles, availableHuddle
         ) : (
           /* Discover Tab Content */
           <>
-            {availableHuddles.length === 0 ? (
+            {localAvailableHuddles.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
                 <Shield className="w-20 h-20 text-gray-300 mb-4" />
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">No Available Huddles</h3>
@@ -355,7 +379,7 @@ export function HuddlesClient({ personId, personName, myHuddles, availableHuddle
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {availableHuddles.map((huddle) => {
+                {localAvailableHuddles.map((huddle) => {
                   const memberCount = huddle.memberships?.length || 0;
                   const spotsLeft = (huddle.maxSize || 6) - memberCount;
                   const isFull = huddle.currentSize >= huddle.maxSize;

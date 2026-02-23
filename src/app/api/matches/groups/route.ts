@@ -61,36 +61,63 @@ export async function GET(request: NextRequest) {
       minScore,
     });
 
-    // Fetch full group details for each match
-    const matches = await Promise.all(
-      compatibilityResults.map(async (result) => {
-        const group = await prisma.group.findUnique({
-          where: { id: result.groupId },
-          include: {
-            creator: {
-              select: {
-                id: true,
-                displayName: true,
-                profileImageUrl: true,
-              },
-            },
-            memberships: {
-              where: { status: 'ACTIVE' },
-              include: {
-                person: {
-                  select: {
-                    id: true,
-                    displayName: true,
-                    profileImageUrl: true,
-                  },
-                },
-              },
-              take: 5, // Show first 5 members as preview
-            },
-          },
-        });
+    // Batch fetch all group details in a single query
+    const groupIds = compatibilityResults.map(r => r.groupId);
 
+    // Fetch groups separately to avoid RLS issues with includes
+    const groups = await prisma.group.findMany({
+      where: { id: { in: groupIds } },
+    });
+
+    // Fetch creators separately
+    const creatorIds = groups.map(g => g.createdBy).filter((id): id is string => id !== null);
+    const creators = await prisma.person.findMany({
+      where: { id: { in: creatorIds } },
+      select: { id: true, displayName: true, profileImageUrl: true },
+    });
+
+    // Fetch memberships separately
+    const memberships = await prisma.groupMembership.findMany({
+      where: {
+        groupId: { in: groupIds },
+        status: 'ACTIVE',
+      },
+      take: groupIds.length * 5, // Up to 5 members per group
+    });
+
+    // Fetch member persons separately
+    const memberPersonIds = memberships.map(m => m.personId);
+    const memberPersons = await prisma.person.findMany({
+      where: { id: { in: memberPersonIds } },
+      select: { id: true, displayName: true, profileImageUrl: true },
+    });
+
+    // Create lookup maps for O(1) access
+    const groupMap = new Map(groups.map(g => [g.id, g]));
+    const creatorMap = new Map(creators.map(c => [c.id, c]));
+    const memberPersonMap = new Map(memberPersons.map(p => [p.id, p]));
+
+    // Group memberships by groupId
+    const membershipsByGroup = new Map<string, typeof memberships>();
+    for (const membership of memberships) {
+      const existing = membershipsByGroup.get(membership.groupId) || [];
+      if (existing.length < 5) { // Limit to 5 members per group
+        existing.push(membership);
+        membershipsByGroup.set(membership.groupId, existing);
+      }
+    }
+
+    // Map results using lookups
+    const matches = compatibilityResults
+      .map(result => {
+        const group = groupMap.get(result.groupId);
         if (!group) return null;
+
+        const creator = group.createdBy ? creatorMap.get(group.createdBy) : null;
+        const groupMemberships = membershipsByGroup.get(result.groupId) || [];
+        const members = groupMemberships
+          .map(m => memberPersonMap.get(m.personId))
+          .filter((p): p is NonNullable<typeof p> => p !== null);
 
         return {
           group: {
@@ -105,8 +132,8 @@ export async function GET(request: NextRequest) {
             isVirtual: group.isVirtual,
             latitude: group.latitude,
             longitude: group.longitude,
-            creator: group.creator,
-            members: group.memberships.map((m) => m.person),
+            creator: creator || undefined,
+            members,
             createdAt: group.createdAt,
           },
           interestScore: result.interestScore,
@@ -117,9 +144,9 @@ export async function GET(request: NextRequest) {
           matchReasons: result.matchReasons,
         };
       })
-    );
+      .filter((m): m is NonNullable<typeof m> => m !== null);
 
-    const filteredMatches = matches.filter((m): m is NonNullable<typeof m> => m !== null);
+    const filteredMatches = matches;
 
     return NextResponse.json({
       matches: filteredMatches,

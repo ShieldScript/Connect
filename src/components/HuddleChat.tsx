@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Send, Lock, Shield } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import toast from 'react-hot-toast';
 
 interface Message {
   id: string;
@@ -130,7 +131,7 @@ export function HuddleChat({ huddleId, personId, personName }: HuddleChatProps) 
       // Message will appear via real-time subscription
     } catch (err: any) {
       console.error('Failed to send message:', err);
-      alert(err.message || 'Failed to send message');
+      toast.error(err.message || 'Failed to send message');
       setNewMessage(messageContent); // Restore message on error
     } finally {
       setSending(false);

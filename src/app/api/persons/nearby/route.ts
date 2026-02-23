@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/middleware/auth';
-import { getPersonBySupabaseId, getPersonById } from '@/lib/services/personService';
+import { getPersonBySupabaseId } from '@/lib/services/personService';
 import { findPersonsNearby } from '@/lib/services/proximityService';
 import { getVisibleProfile } from '@/lib/services/privacyService';
 import { z } from 'zod';
@@ -68,16 +68,13 @@ export async function GET(request: NextRequest) {
       limit,
     });
 
-    // Apply privacy filtering to each person
-    const filteredPersons = await Promise.all(
-      nearbyPersons.map(async (nearbyPerson) => {
+    // Apply privacy filtering to each person (now with interests already fetched)
+    const filteredPersons = nearbyPersons
+      .map((nearbyPerson) => {
         try {
-          // Fetch full person with interests and groups
-          const fullPerson = await getPersonById(nearbyPerson.id);
-          if (!fullPerson) return null;
-
-          // Apply privacy filtering
-          const visibleProfile = getVisibleProfile(fullPerson, person.id);
+          // Apply privacy filtering directly to the fetched data
+          // nearbyPerson already has interests from the SQL query
+          const visibleProfile = getVisibleProfile(nearbyPerson as any, person.id);
 
           return {
             ...visibleProfile,
@@ -89,10 +86,10 @@ export async function GET(request: NextRequest) {
           return null;
         }
       })
-    );
+      .filter((p): p is NonNullable<typeof p> => p !== null);
 
-    // Remove nulls (blocked/inaccessible persons)
-    const accessiblePersons = filteredPersons.filter((p): p is NonNullable<typeof p> => p !== null);
+    // Already filtered, no need for another filter
+    const accessiblePersons = filteredPersons;
 
     return NextResponse.json({
       persons: accessiblePersons,

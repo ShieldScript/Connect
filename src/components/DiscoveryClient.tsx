@@ -7,6 +7,7 @@ import { DiscoveryHeader } from '@/components/DiscoveryHeader';
 import { DiscoveryFeed } from '@/components/DiscoveryFeed';
 import { PersonMatchResult, GroupWithRelations } from '@/types';
 import { useDiscoveryData } from '@/hooks/useDiscoveryData';
+import toast from 'react-hot-toast';
 
 // Load map only on client-side to avoid SSR issues with Leaflet
 const RadialCompassMapCartoDB = dynamic(
@@ -44,6 +45,7 @@ export default function DiscoveryClient({
 }: DiscoveryClientProps) {
   const searchParams = useSearchParams();
   const [selectedRadius, setSelectedRadius] = useState(savedRadius);
+  const [isSavingRadius, setIsSavingRadius] = useState(false);
   const [activeTab, setActiveTab] = useState<IntelTab>('fellows');
   const [searchQuery, setSearchQuery] = useState('');
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
@@ -97,15 +99,29 @@ export default function DiscoveryClient({
   // Save radius to database when it changes
   const handleRadiusChange = async (newRadius: number) => {
     setSelectedRadius(newRadius);
+    setIsSavingRadius(true);
 
     try {
-      await fetch('/api/persons/me/update-profile', {
+      const response = await fetch('/api/persons/me/update-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ proximityRadiusKm: newRadius }),
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to save radius');
+      }
+
+      toast.success(`Search radius updated to ${newRadius}km`);
     } catch (err) {
       console.error('Failed to save radius preference:', err);
+      toast.error('Failed to save radius preference');
+      // Rollback on error
+      if (savedRadius !== undefined) {
+        setSelectedRadius(savedRadius);
+      }
+    } finally {
+      setIsSavingRadius(false);
     }
   };
 
@@ -141,6 +157,7 @@ export default function DiscoveryClient({
       <DiscoveryHeader
         selectedRadius={selectedRadius}
         onRadiusChange={handleRadiusChange}
+        isSavingRadius={isSavingRadius}
         activeTab={activeTab}
         onTabChange={setActiveTab}
         searchQuery={searchQuery}

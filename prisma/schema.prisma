@@ -196,6 +196,9 @@ model GroupMembership {
   @@index([groupId])
   @@index([status])
   @@index([role])
+  @@index([groupId, status])
+  @@index([personId, status])
+  @@index([groupId, personId])
 }
 
 model HuddleMessage {
@@ -210,8 +213,12 @@ model HuddleMessage {
   huddle Group  @relation(fields: [huddleId], references: [id], onDelete: Cascade)
   sender Person @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
-  @@index([huddleId, createdAt(sort: Desc)])
+  @@index([huddleId])
   @@index([senderId])
+  @@index([createdAt])
+  @@index([huddleId, createdAt(sort: Desc)])
+  @@index([huddleId, senderId, createdAt])
+  @@index([huddleId, deletedAt, createdAt])
 }
 
 model PrayerPost {
@@ -228,6 +235,7 @@ model PrayerPost {
 
   @@index([createdAt(sort: Desc)])
   @@index([authorId])
+  @@index([authorId, createdAt])
 }
 
 model PrayerResponse {

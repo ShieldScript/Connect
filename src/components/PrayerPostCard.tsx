@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Heart, Loader2, Trash2, Pencil, X, Check } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import toast from 'react-hot-toast';
 
 interface PrayerPostCardProps {
   prayer: {
@@ -103,15 +104,16 @@ export function PrayerPostCard({
         const data = await response.json();
         setContent(data.prayer.content);
         setIsEditing(false);
+        toast.success('Prayer updated');
         onUpdated?.(prayer.id, data.prayer.content);
       } else {
         const error = await response.json();
         console.error('Failed to update:', error);
-        alert(error.error || 'Failed to update prayer');
+        toast.error(error.error || 'Failed to update prayer');
       }
     } catch (error) {
       console.error('Error updating:', error);
-      alert('Failed to update prayer');
+      toast.error('Failed to update prayer');
     } finally {
       setIsSaving(false);
     }
@@ -130,15 +132,16 @@ export function PrayerPostCard({
       });
 
       if (response.ok) {
+        toast.success('Prayer deleted');
         onDeleted?.(prayer.id);
       } else {
         const error = await response.json();
         console.error('Failed to delete:', error);
-        alert('Failed to delete prayer');
+        toast.error('Failed to delete prayer');
       }
     } catch (error) {
       console.error('Error deleting:', error);
-      alert('Failed to delete prayer');
+      toast.error('Failed to delete prayer');
     } finally {
       setIsDeleting(false);
     }

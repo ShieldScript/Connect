@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, MessageSquare, Settings, Shield, MapPin, Calendar, ChevronLeft } from 'lucide-react';
+import { Users, MessageSquare, Settings, Shield, MapPin, Calendar, ChevronLeft, Loader2 } from 'lucide-react';
 import { HuddleChat } from './HuddleChat';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 
 interface GroupDetailClientProps {
   group: any;
@@ -21,9 +22,35 @@ export function GroupDetailClient({
   membership,
 }: GroupDetailClientProps) {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [isJoining, setIsJoining] = useState(false);
   const isHuddle = group.category === 'HUDDLE';
   const isMember = !!membership && membership.status === 'ACTIVE';
   const isCreator = group.createdBy === personId;
+
+  const handleJoinGroup = async () => {
+    setIsJoining(true);
+    try {
+      const response = await fetch(`/api/groups/${group.id}/join`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to join');
+      }
+
+      toast.success(`Joined ${group.name}!`);
+
+      // Refresh to show updated membership
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (err: any) {
+      toast.error(err.message || `Failed to join ${isHuddle ? 'huddle' : 'circle'}`);
+    } finally {
+      setIsJoining(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -74,13 +101,22 @@ export function GroupDetailClient({
 
             {!isMember && (
               <button
-                className={`px-6 py-3 rounded-lg font-semibold ${
+                onClick={handleJoinGroup}
+                disabled={isJoining}
+                className={`px-6 py-3 rounded-lg font-semibold transition disabled:opacity-50 ${
                   isHuddle
                     ? 'bg-green-600 hover:bg-green-700'
                     : 'bg-blue-600 hover:bg-blue-700'
-                } text-white transition`}
+                } text-white`}
               >
-                Join {isHuddle ? 'Huddle' : 'Circle'}
+                {isJoining ? (
+                  <>
+                    <Loader2 className="inline w-4 h-4 mr-2 animate-spin" />
+                    Joining...
+                  </>
+                ) : (
+                  `Join ${isHuddle ? 'Huddle' : 'Circle'}`
+                )}
               </button>
             )}
           </div>

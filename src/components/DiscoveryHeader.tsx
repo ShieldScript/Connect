@@ -1,12 +1,13 @@
 'use client';
 
-import { Map, Users, Flame, Plus, ChevronDown, Search } from 'lucide-react';
+import { Map, Users, Flame, Plus, ChevronDown, Search, Loader2 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 
 interface DiscoveryHeaderProps {
   selectedRadius: number;
   onRadiusChange: (radius: number) => void;
+  isSavingRadius?: boolean;
   activeTab: 'fellows' | 'circles';
   onTabChange: (tab: 'fellows' | 'circles') => void;
   searchQuery: string;
@@ -26,6 +27,7 @@ const RADIUS_OPTIONS = [
 export function DiscoveryHeader({
   selectedRadius,
   onRadiusChange,
+  isSavingRadius = false,
   activeTab,
   onTabChange,
   searchQuery,
@@ -85,10 +87,20 @@ export function DiscoveryHeader({
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsRadiusDropdownOpen(!isRadiusDropdownOpen)}
-              className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-indigo-200 hover:border-indigo-300 text-gray-700 rounded-lg font-medium text-sm transition"
+              disabled={isSavingRadius}
+              className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-indigo-200 hover:border-indigo-300 text-gray-700 rounded-lg font-medium text-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span>{selectedRadiusLabel}</span>
-              <ChevronDown className="w-4 h-4" strokeWidth={2} />
+              {isSavingRadius ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <span>{selectedRadiusLabel}</span>
+                  <ChevronDown className="w-4 h-4" strokeWidth={2} />
+                </>
+              )}
             </button>
 
             {isRadiusDropdownOpen && (
