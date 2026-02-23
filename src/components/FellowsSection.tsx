@@ -280,7 +280,7 @@ export function FellowsSection({ station, currentUserLat, currentUserLng, savedR
         <div className="flex items-center gap-3">
           <h2 className="text-lg font-bold text-gray-900 uppercase tracking-wide">Brothers Nearby</h2>
           <span className="text-sm text-gray-500">
-            {isScanning ? 'Loading...' : `(${allFellows.length})`}
+            {isScanning ? 'Scanning...' : `(${allFellows.length})`}
           </span>
 
           {/* Radius Dropdown Pill */}
