@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
-import { Plus, Shield } from 'lucide-react';
+import { Plus, Shield, Flame } from 'lucide-react';
 import { MiniPillCard } from './MiniPillCard';
 import { CirclePillCard } from './CirclePillCard';
 import { CreateCircleForm } from './CreateCircleForm';
