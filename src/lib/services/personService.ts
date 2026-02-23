@@ -41,16 +41,34 @@ export async function createPerson(params: CreatePersonParams) {
 export async function getPersonBySupabaseId(supabaseUserId: string) {
   const person = await prisma.person.findUnique({
     where: { supabaseUserId },
-    include: {
-      interests: {
-        include: {
-          interest: true,
-        },
-      },
-    },
   });
 
-  return person;
+  if (!person) return null;
+
+  // Fetch interests separately to avoid RLS issues
+  const personInterests = await prisma.personInterest.findMany({
+    where: { personId: person.id },
+  });
+
+  // Fetch interest details
+  const interestIds = personInterests.map(pi => pi.interestId);
+  const interests = await prisma.interest.findMany({
+    where: { id: { in: interestIds } },
+  });
+
+  // Map interests by ID
+  const interestMap = new Map(interests.map(i => [i.id, i]));
+
+  // Attach interest data to personInterests
+  const personInterestsWithDetails = personInterests.map(pi => ({
+    ...pi,
+    interest: interestMap.get(pi.interestId)!,
+  }));
+
+  return {
+    ...person,
+    interests: personInterestsWithDetails,
+  };
 }
 
 /**
@@ -59,16 +77,34 @@ export async function getPersonBySupabaseId(supabaseUserId: string) {
 export async function getPersonById(personId: string) {
   const person = await prisma.person.findUnique({
     where: { id: personId },
-    include: {
-      interests: {
-        include: {
-          interest: true,
-        },
-      },
-    },
   });
 
-  return person;
+  if (!person) return null;
+
+  // Fetch interests separately to avoid RLS issues
+  const personInterests = await prisma.personInterest.findMany({
+    where: { personId: person.id },
+  });
+
+  // Fetch interest details
+  const interestIds = personInterests.map(pi => pi.interestId);
+  const interests = await prisma.interest.findMany({
+    where: { id: { in: interestIds } },
+  });
+
+  // Map interests by ID
+  const interestMap = new Map(interests.map(i => [i.id, i]));
+
+  // Attach interest data to personInterests
+  const personInterestsWithDetails = personInterests.map(pi => ({
+    ...pi,
+    interest: interestMap.get(pi.interestId)!,
+  }));
+
+  return {
+    ...person,
+    interests: personInterestsWithDetails,
+  };
 }
 
 /**
