@@ -79,7 +79,7 @@ export async function findPersonsNearby(
         ${radiusKm * 1000}
       )
       AND p.id != ${currentUserId}
-      AND NOT (p.id = ANY(${blockedPersons}::text[]))
+      ${blockedPersons.length > 0 ? Prisma.sql`AND NOT (p.id = ANY(ARRAY[${Prisma.join(blockedPersons)}]::text[]))` : Prisma.empty}
       AND p.location IS NOT NULL
     ORDER BY "distanceKm" ASC
     LIMIT ${limit}
