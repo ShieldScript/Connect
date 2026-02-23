@@ -44,11 +44,6 @@ export function DevMenu({ personId, currentOnboardingLevel }: DevMenuProps) {
     }
   };
 
-  // Only show in development
-  if (process.env.NODE_ENV === 'production') {
-    return null;
-  }
-
   return (
     <>
       {/* Floating Toggle Button */}
@@ -123,7 +118,7 @@ export function DevMenu({ personId, currentOnboardingLevel }: DevMenuProps) {
           {/* Environment Badge */}
           <div className="mt-4 pt-3 border-t border-gray-200">
             <p className="text-xs text-gray-500 text-center">
-              Development Mode Only
+              Testing Mode - Use with caution
             </p>
           </div>
         </div>
