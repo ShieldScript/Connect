@@ -189,7 +189,7 @@ export function GroupDetailClient({
             <h2 className="text-xl font-bold text-gray-900 mb-4">Members</h2>
             <div className="space-y-3">
               {group.memberships
-                .filter((m: any) => m.status === 'ACTIVE')
+                .filter((m: any) => m.status === 'ACTIVE' && m.person)
                 .map((m: any) => (
                   <div
                     key={m.id}
@@ -197,10 +197,10 @@ export function GroupDetailClient({
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
-                        {m.person.displayName[0]}
+                        {m.person?.displayName?.[0] || '?'}
                       </div>
                       <div>
-                        <div className="font-semibold text-gray-900">{m.person.displayName}</div>
+                        <div className="font-semibold text-gray-900">{m.person?.displayName || 'Unknown'}</div>
                         {m.role === 'CREATOR' && (
                           <span className="text-xs text-gray-500">Creator</span>
                         )}

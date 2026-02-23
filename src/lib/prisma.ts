@@ -4,8 +4,8 @@ import { Pool } from 'pg';
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
-// Use MIGRATION_URL (direct connection, bypasses RLS) for server-side queries
-// This allows server-side code to read all data without RLS restrictions
+// Use MIGRATION_URL (direct connection, port 5432) for server-side queries
+// This has full PostgreSQL features and better for complex queries
 const connectionString = process.env.MIGRATION_URL || process.env.DATABASE_URL;
 const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
