@@ -1,12 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
-import { prisma } from '@/lib/prisma'
-import { cache, CACHE_TTL } from '@/lib/cache'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { ChevronRight, Users2, Map, Hammer, Radio, MapPin, Bell, ArrowRight, Shield, Users } from 'lucide-react'
+import { Users2, Hammer, Radio, MapPin, Bell, ArrowRight, Shield, Users } from 'lucide-react'
 import { DashboardClient } from '@/components/DashboardClient'
 import { FellowsSection } from '@/components/FellowsSection'
 import { PrayerWallPreview } from '@/components/PrayerWallPreview'
+import { getDashboardData } from '@/app/actions/dashboard'
 
 // Force dynamic rendering to always fetch fresh data
 export const dynamic = 'force-dynamic'
@@ -20,106 +19,16 @@ export default async function Home() {
       redirect('/login')
     }
 
-    // OPTIMIZATION: Fetch in parallel instead of deeply nested includes
-    // Step 1: Get person and their relations separately
-    const [basePerson, personInterests, personMemberships] = await Promise.all([
-      // Get person data only
-      prisma.person.findUnique({
-        where: { supabaseUserId: user.id },
-      }),
+    // Fetch all dashboard data using Server Action
+    const { person, nearbyCount, myHuddles, recentPrayers, savedRadius, error } = await getDashboardData(user.id)
 
-      // Get person's interests (will join with Interest table next)
-      prisma.personInterest.findMany({
-        where: { person: { supabaseUserId: user.id } },
-      }),
-
-      // Get person's active huddle memberships
-      prisma.groupMembership.findMany({
-        where: {
-          person: { supabaseUserId: user.id },
-          status: 'ACTIVE',
-        },
-        orderBy: { joinedAt: 'desc' },
-      }),
-    ])
-
-    if (!basePerson) {
+    if (error || !person) {
       return (
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
           <h1 className="text-2xl font-bold">Finishing Setup...</h1>
-          <p>Please wait while we set up your profile.</p>
+          <p>{error || 'Please wait while we set up your profile.'}</p>
         </div>
       )
-    }
-
-    // Step 2: Fetch related data in parallel
-    const interestIds = personInterests.map(pi => pi.interestId)
-    const membershipGroupIds = personMemberships.map(m => m.groupId)
-
-    const [interestRecords, groups] = await Promise.all([
-      // Get all interests
-      interestIds.length > 0
-        ? prisma.interest.findMany({ where: { id: { in: interestIds } } })
-        : Promise.resolve([]),
-
-      // Get all groups (will filter to huddles)
-      membershipGroupIds.length > 0
-        ? prisma.group.findMany({
-            where: {
-              id: { in: membershipGroupIds },
-              category: 'HUDDLE',
-            },
-          })
-        : Promise.resolve([]),
-    ])
-
-    // Step 3: Get memberships for each huddle group
-    const huddleGroupIds = groups.map(g => g.id)
-    const groupMemberships = huddleGroupIds.length > 0
-      ? await prisma.groupMembership.findMany({
-          where: {
-            groupId: { in: huddleGroupIds },
-            status: 'ACTIVE',
-          },
-        })
-      : []
-
-    // Step 4: Reconstruct the exact data structure the UI expects
-    // Build lookups using plain objects (production-safe)
-    const interestLookup: Record<string, any> = {}
-    interestRecords.forEach(i => { interestLookup[i.id] = i })
-
-    const groupLookup: Record<string, any> = {}
-    groups.forEach(g => { groupLookup[g.id] = g })
-
-    const membershipsByGroupId: Record<string, any[]> = {}
-    groupMemberships.forEach(m => {
-      if (!membershipsByGroupId[m.groupId]) {
-        membershipsByGroupId[m.groupId] = []
-      }
-      if (membershipsByGroupId[m.groupId].length < 4) {
-        membershipsByGroupId[m.groupId].push(m)
-      }
-    })
-
-    // Create person object with exact same structure as nested include would produce
-    const person = {
-      ...basePerson,
-      // Reconstruct person.interests array with nested interest object
-      interests: personInterests.map(pi => ({
-        ...pi,
-        interest: interestLookup[pi.interestId] || null,
-      })),
-      // Reconstruct person.memberships array with nested group object
-      memberships: personMemberships
-        .filter(m => groupLookup[m.groupId]) // Only include huddle memberships
-        .map(m => ({
-          ...m,
-          group: {
-            ...groupLookup[m.groupId],
-            memberships: membershipsByGroupId[m.groupId] || [],
-          },
-        })),
     }
 
   // Map interests for easier use (filter out any with missing interest data)
@@ -156,141 +65,6 @@ export default async function Home() {
   const region = person.region || ''
   const archetypeName = person.archetype
 
-  // Parallelize nearby count and huddle queries
-  const savedRadius = person.proximityRadiusKm || 5;
-
-  const [nearbyCount, myHuddles, recentPrayers] = await Promise.all([
-    // Query 1: Nearby count with PostgreSQL function + caching (5 min TTL)
-    (async () => {
-      if (!person.latitude || !person.longitude) return 0;
-
-      // Check cache first
-      const cacheKey = `nearby:${person.id}:${savedRadius}`;
-      const cached = cache.get<number>(cacheKey, CACHE_TTL.NEARBY_COUNT);
-      if (cached !== null) {
-        return cached;
-      }
-
-      // Cache miss - query database using PostgreSQL function
-      try {
-        const result = await Promise.race([
-          prisma.$queryRaw<Array<{ get_nearby_count: number }>>`
-            SELECT get_nearby_count(
-              ${person.latitude}::double precision,
-              ${person.longitude}::double precision,
-              ${savedRadius}::double precision,
-              ${person.id}::text
-            ) as get_nearby_count
-          `,
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Query timeout')), 5000)
-          )
-        ]) as Array<{ get_nearby_count: number }>;
-
-        const count = Number(result[0]?.get_nearby_count || 0);
-
-        // Store in cache
-        cache.set(cacheKey, count);
-
-        return count;
-      } catch (error) {
-        console.error('Error fetching nearby count:', error);
-        return 0;
-      }
-    })(),
-
-    // Query 2: Huddles with unread counts using PostgreSQL function
-    (async () => {
-      if (person.memberships.length === 0) return [];
-
-      try {
-        // Query all unread counts in parallel using PostgreSQL function
-        const unreadCountPromises = person.memberships.map(async (membership) => {
-          const cacheKey = `unread:${membership.groupId}:${person.id}`;
-          const cached = cache.get<number>(cacheKey, CACHE_TTL.UNREAD_COUNT);
-
-          if (cached !== null) {
-            return { huddleId: membership.groupId, count: cached };
-          }
-
-          // Cache miss - query using PostgreSQL function
-          try {
-            const result = await prisma.$queryRaw<Array<{ get_unread_huddle_count: number }>>`
-              SELECT get_unread_huddle_count(
-                ${membership.groupId}::text,
-                ${person.id}::text
-              ) as get_unread_huddle_count
-            `;
-
-            const count = Number(result[0]?.get_unread_huddle_count || 0);
-            cache.set(cacheKey, count);
-
-            return { huddleId: membership.groupId, count };
-          } catch (err) {
-            console.error(`Error fetching unread count for huddle ${membership.groupId}:`, err);
-            return { huddleId: membership.groupId, count: 0 };
-          }
-        });
-
-        const unreadCounts = await Promise.all(unreadCountPromises);
-
-        // Build lookup map
-        const countMap: Record<string, number> = {};
-        unreadCounts.forEach(c => { countMap[c.huddleId] = c.count });
-
-        return person.memberships.map((membership) => ({
-          ...membership.group,
-          unreadCount: countMap[membership.groupId] || 0,
-          membershipId: membership.id,
-        }));
-      } catch (error) {
-        console.error('Error fetching huddle unread counts:', error);
-        return person.memberships.map(membership => ({
-          ...membership.group,
-          unreadCount: 0,
-          membershipId: membership.id,
-        }));
-      }
-    })(),
-
-    // Query 3: Recent prayers for Prayer Wall preview
-    (async () => {
-      try {
-        const prayers = await prisma.prayerPost.findMany({
-          where: { deletedAt: null },
-          include: {
-            author: {
-              select: {
-                id: true,
-                displayName: true,
-              },
-            },
-            prayers: {
-              where: { prayerId: person.id },
-              select: { id: true },
-            },
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 3, // Limit to 3 for dashboard preview
-        });
-
-        // Transform to include userPrayed flag
-        return prayers.map((prayer) => ({
-          id: prayer.id,
-          content: prayer.content,
-          prayerCount: prayer.prayerCount,
-          createdAt: prayer.createdAt,
-          updatedAt: prayer.updatedAt,
-          author: prayer.author,
-          userPrayed: prayer.prayers.length > 0,
-        }));
-      } catch (error) {
-        console.error('Error fetching recent prayers:', error);
-        return [];
-      }
-    })()
-  ]);
-
   // Format connection style
   const connectionStyleMap: Record<string, string> = {
     'workshop': 'Builders',
@@ -300,13 +74,6 @@ export default async function Home() {
   const connectionStyle = person.connectionStyle
     ? (connectionStyleMap[person.connectionStyle] || 'Builders')
     : 'Builders'
-
-  // Sort: unread first, then by most recent activity
-  myHuddles.sort((a, b) => {
-    if (a.unreadCount > 0 && b.unreadCount === 0) return -1;
-    if (a.unreadCount === 0 && b.unreadCount > 0) return 1;
-    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-  });
 
   // Limit to top 3 huddles (Focus Rule: prioritize what matters most)
   const displayHuddles = myHuddles.slice(0, 3);
