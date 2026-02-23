@@ -19,37 +19,38 @@ export default async function Home() {
       redirect('/login')
     }
 
-    // Optimize: Fetch in parallel with shallow includes instead of deeply nested
-    const [person, personInterests, huddleMemberships] = await Promise.all([
-      // Query 1: Person data only
-      prisma.person.findUnique({
-        where: { supabaseUserId: user.id },
-      }),
-
-      // Query 2: Person interests with interest details (2 level include - acceptable)
-      prisma.personInterest.findMany({
-        where: {
-          person: { supabaseUserId: user.id },
-        },
+    const person = await prisma.person.findUnique({
+    where: { supabaseUserId: user.id },
+    include: {
+      interests: {
         include: {
           interest: true,
         },
-      }),
-
-      // Query 3: Active huddle memberships
-      prisma.groupMembership.findMany({
+      },
+      memberships: {
         where: {
-          person: { supabaseUserId: user.id },
           status: 'ACTIVE',
           group: {
             category: 'HUDDLE',
           },
         },
+        include: {
+          group: {
+            include: {
+              memberships: {
+                where: { status: 'ACTIVE' },
+                take: 4,
+              },
+            },
+          },
+        },
         orderBy: {
           joinedAt: 'desc',
         },
-      }),
-    ])
+      },
+    },
+    // Include community and city fields
+  })
 
   if (!person) {
     // This could happen if they signed up via Supabase but the Prisma record failed
@@ -62,55 +63,8 @@ export default async function Home() {
     )
   }
 
-  // Fetch groups and their memberships in parallel
-  const groupIds = huddleMemberships.map(m => m.groupId)
-  const [groups, groupMemberships] = groupIds.length > 0
-    ? await Promise.all([
-        // Query 4: Fetch all groups
-        prisma.group.findMany({
-          where: { id: { in: groupIds } },
-        }),
-        // Query 5: Fetch all memberships for these groups
-        prisma.groupMembership.findMany({
-          where: {
-            groupId: { in: groupIds },
-            status: 'ACTIVE',
-          },
-          take: groupIds.length * 4, // Up to 4 members per group
-        }),
-      ])
-    : [[], []]
-
-  // Create lookup maps
-  const groupMap = new Map(groups.map(g => [g.id, g]))
-  const membershipsByGroup = new Map()
-  for (const membership of groupMemberships) {
-    const existing = membershipsByGroup.get(membership.groupId) || []
-    if (existing.length < 4) {
-      existing.push(membership)
-      membershipsByGroup.set(membership.groupId, existing)
-    }
-  }
-
-  // Enrich person data with fetched relations
-  const enrichedPerson = {
-    ...person,
-    interests: personInterests,
-    memberships: huddleMemberships.map(m => {
-      const group = groupMap.get(m.groupId)
-      if (!group) return null
-      return {
-        ...m,
-        group: {
-          ...group,
-          memberships: membershipsByGroup.get(m.groupId) || [],
-        },
-      }
-    }).filter((m): m is NonNullable<typeof m> => m !== null),
-  }
-
   // Map interests for easier use (filter out any with missing interest data)
-  const interests = enrichedPerson.interests
+  const interests = person.interests
     .filter(pi => pi.interest != null)
     .map(pi => ({
       ...pi.interest!,
@@ -138,18 +92,18 @@ export default async function Home() {
   const primaryCraft = isMentor ? primaryMentorCraft : primaryLearnerCraft
 
   // Extract data from Person model
-  const station = enrichedPerson.community || 'Your Community'
-  const city = enrichedPerson.city || 'Your City'
-  const region = enrichedPerson.region || 'Your Region'
-  const archetypeName = enrichedPerson.archetype
+  const station = person.community || 'Your Community'
+  const city = person.city || 'Your City'
+  const region = person.region || 'Your Region'
+  const archetypeName = person.archetype
 
   // Parallelize nearby count and huddle queries
-  const savedRadius = enrichedPerson.proximityRadiusKm || 5;
+  const savedRadius = person.proximityRadiusKm || 5;
 
   const [nearbyCount, myHuddles] = await Promise.all([
     // Query 1: Nearby count with timeout
     (async () => {
-      if (!enrichedPerson.latitude || !enrichedPerson.longitude) return 0;
+      if (!person.latitude || !person.longitude) return 0;
       try {
         const nearbyPersons = await Promise.race([
           prisma.$queryRaw<any[]>`
@@ -159,11 +113,11 @@ export default async function Home() {
               p."onboardingLevel" >= 1
               AND ST_DWithin(
                 p.location::geography,
-                ST_SetSRID(ST_MakePoint(${enrichedPerson.longitude}, ${enrichedPerson.latitude}), 4326)::geography,
+                ST_SetSRID(ST_MakePoint(${person.longitude}, ${person.latitude}), 4326)::geography,
                 ${savedRadius * 1000}
               )
               AND p.location IS NOT NULL
-              AND p.id != ${enrichedPerson.id}
+              AND p.id != ${person.id}
           `,
           new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Query timeout')), 5000)
@@ -178,34 +132,27 @@ export default async function Home() {
 
     // Query 2: Huddles with aggregated unread counts
     (async () => {
-      if (enrichedPerson.memberships.length === 0) return [];
+      if (person.memberships.length === 0) return [];
 
-      const huddleIds = enrichedPerson.memberships.map(m => m.groupId);
+      const huddleIds = person.memberships.map(m => m.groupId);
 
       try {
-        // Single aggregated query for all unread counts using IN clause
-        // UUIDs are safe (from database), but escape as precaution
-        const escapedIds = huddleIds
-          .map(id => id.replace(/'/g, "''"))
-          .map(id => `'${id}'`)
-          .join(',');
-
+        // Single aggregated query for all unread counts
         const unreadCounts = await Promise.race([
-          prisma.$queryRawUnsafe<Array<{ huddleId: string; count: number }>>(
-            `SELECT
+          prisma.$queryRaw<Array<{ huddleId: string; count: number }>>`
+            SELECT
               hm."huddleId",
               COUNT(*)::int as count
             FROM "HuddleMessage" hm
             INNER JOIN "GroupMembership" gm ON gm."groupId" = hm."huddleId"
             WHERE
-              hm."huddleId" IN (${escapedIds})
-              AND hm."senderId" != $1
+              hm."huddleId" = ANY(ARRAY[${Prisma.join(huddleIds)}]::text[])
+              AND hm."senderId" != ${person.id}
               AND hm."deletedAt" IS NULL
-              AND gm."personId" = $1
+              AND gm."personId" = ${person.id}
               AND hm."createdAt" > COALESCE(gm."lastReadAt", gm."joinedAt", '1970-01-01'::timestamp)
-            GROUP BY hm."huddleId"`,
-            enrichedPerson.id
-          ),
+            GROUP BY hm."huddleId"
+          `,
           new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Huddles query timeout')), 10000)
           )
@@ -213,7 +160,7 @@ export default async function Home() {
 
         const countMap = new Map(unreadCounts.map(c => [c.huddleId, c.count]));
 
-        return enrichedPerson.memberships.map((membership, idx) => {
+        return person.memberships.map((membership, idx) => {
           // TEMPORARY: Simulate unread badges for testing
           const actualUnread = countMap.get(membership.groupId) || 0;
           const simulatedUnreadCount = idx === 0 ? 3 : idx === 1 ? 12 : actualUnread;
@@ -226,7 +173,7 @@ export default async function Home() {
         });
       } catch (error) {
         console.error('Error fetching huddle unread counts:', error);
-        return enrichedPerson.memberships.map(membership => ({
+        return person.memberships.map(membership => ({
           ...membership.group,
           unreadCount: 0,
           membershipId: membership.id,
@@ -241,8 +188,8 @@ export default async function Home() {
     'fireside': 'The Fireside',
     'outpost': 'Bridge',
   }
-  const connectionStyle = enrichedPerson.connectionStyle
-    ? (connectionStyleMap[enrichedPerson.connectionStyle] || 'Builders')
+  const connectionStyle = person.connectionStyle
+    ? (connectionStyleMap[person.connectionStyle] || 'Builders')
     : 'Builders'
 
   // Sort: unread first, then by most recent activity
@@ -254,10 +201,10 @@ export default async function Home() {
 
     return (
       <DashboardClient
-        personId={enrichedPerson.id}
-        displayName={enrichedPerson.displayName}
-        email={enrichedPerson.email}
-        onboardingLevel={enrichedPerson.onboardingLevel}
+        personId={person.id}
+        displayName={person.displayName}
+        email={person.email}
+        onboardingLevel={person.onboardingLevel}
         isMentor={isMentor}
         archetypeName={archetypeName || ''}
         primaryCraftName={primaryCraft?.name}
@@ -265,12 +212,12 @@ export default async function Home() {
         city={city}
         region={region}
         connectionStyle={connectionStyle}
-        latitude={enrichedPerson.latitude || undefined}
-        longitude={enrichedPerson.longitude || undefined}
+        latitude={person.latitude || undefined}
+        longitude={person.longitude || undefined}
       >
       <main className="min-h-screen bg-white">
         {/* Preview State - Blurred Groups (Only when not onboarded) */}
-        {enrichedPerson.onboardingLevel === 0 ? (
+        {person.onboardingLevel === 0 ? (
           <div className="flex items-center justify-center min-h-[calc(100vh-56px)]">
             <div className="relative w-full max-w-6xl px-8">
               {/* Blurred Preview Content */}
@@ -329,7 +276,7 @@ export default async function Home() {
                     Welcome Back,
                   </h1>
                   <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                    {enrichedPerson.displayName}
+                    {person.displayName}
                   </h2>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-bold text-gray-700 uppercase tracking-wide">Archetype:</span>
@@ -359,9 +306,9 @@ export default async function Home() {
             {/* Brothers Discovery - Mini-Card Layout */}
             <FellowsSection
               station={station}
-              currentUserLat={enrichedPerson.latitude || 0}
-              currentUserLng={enrichedPerson.longitude || 0}
-              savedRadius={enrichedPerson.proximityRadiusKm || 5}
+              currentUserLat={person.latitude || 0}
+              currentUserLng={person.longitude || 0}
+              savedRadius={person.proximityRadiusKm || 5}
             />
 
             {/* My Huddles - Horizontal Scroll */}
