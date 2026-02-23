@@ -65,7 +65,7 @@ export default function DiscoveryClient({
   useEffect(() => {
     console.log('🔍 DiscoveryClient - Raw data from hook:', {
       personsCount: persons.length,
-      personsWithLocation: persons.filter(p => p.latitude && p.longitude).length,
+      personsWithLocation: persons.filter(p => p.location?.latitude && p.location?.longitude).length,
       physicalGatheringsCount: physicalGatherings.length,
       digitalGatheringsCount: digitalGatherings.length,
       firstPerson: persons[0],
@@ -215,15 +215,11 @@ export default function DiscoveryClient({
                     .map(p => ({
                       id: p.id,
                       displayName: p.displayName,
-                      location: p.latitude && p.longitude
-                        ? { latitude: p.latitude, longitude: p.longitude }
-                        : null,
-                      distanceKm: p.distanceKm || (p.latitude && p.longitude
-                        ? calculateDistance(userLocation.lat, userLocation.lng, p.latitude, p.longitude)
-                        : 0),
+                      location: p.location || null,
+                      distanceKm: p.distanceKm || 0,
                       archetype: p.archetype || undefined,
                       interests: p.interests?.map((pi: any) => ({
-                        name: pi.interest?.name || pi.name,
+                        name: pi.name,
                         proficiencyLevel: pi.proficiencyLevel,
                       })) || [],
                       bio: p.bio || undefined,

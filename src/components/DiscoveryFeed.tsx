@@ -174,7 +174,7 @@ export function DiscoveryFeed({
               const isExpanded = expandedPersonId === personId;
 
               const interests = (person.interests || []).map((pi: any) => ({
-                name: pi.interest?.name || pi.name,
+                name: pi.name,
                 proficiencyLevel: pi.proficiencyLevel,
               }));
 
