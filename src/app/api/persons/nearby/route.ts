@@ -59,13 +59,14 @@ export async function GET(request: NextRequest) {
 
     const { lat, lng, radius = 50, limit = 20 } = validationResult.data;
 
-    // Find nearby persons
+    // Find nearby persons (sorted by proximity, then matching connection style)
     const nearbyPersons = await findPersonsNearby({
       latitude: lat,
       longitude: lng,
       radiusKm: radius,
       currentUserId: person.id,
       limit,
+      userConnectionStyle: person.connectionStyle,
     });
 
     // Apply privacy filtering to each person (now with interests already fetched)

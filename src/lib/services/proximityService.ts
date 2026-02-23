@@ -58,9 +58,9 @@ export interface GroupNearby {
  * Find persons within a radius using PostGIS
  */
 export async function findPersonsNearby(
-  params: ProximitySearchParams
+  params: ProximitySearchParams & { userConnectionStyle?: string | null }
 ): Promise<PersonNearby[]> {
-  const { latitude, longitude, radiusKm, currentUserId, limit = 20 } = params;
+  const { latitude, longitude, radiusKm, currentUserId, limit = 20, userConnectionStyle } = params;
 
   // Get current user's blocked list
   const currentUser = await prisma.person.findUnique({
@@ -116,8 +116,13 @@ export async function findPersonsNearby(
       AND p.id != ${currentUserId}
       ${blockedPersons.length > 0 ? Prisma.sql`AND NOT (p.id = ANY(ARRAY[${Prisma.join(blockedPersons)}]::text[]))` : Prisma.empty}
       AND p.location IS NOT NULL
-    GROUP BY p.id, p.location
-    ORDER BY "distanceKm" ASC
+    GROUP BY p.id, p.location, p."connectionStyle"
+    ORDER BY
+      "distanceKm" ASC,
+      ${userConnectionStyle
+        ? Prisma.sql`CASE WHEN p."connectionStyle" = ${userConnectionStyle} THEN 0 ELSE 1 END ASC`
+        : Prisma.sql`p."connectionStyle" ASC NULLS LAST`
+      }
     LIMIT ${limit}
   `;
 
