@@ -3,6 +3,7 @@ import { getCurrentUser } from '@/lib/middleware/auth';
 import { getPersonBySupabaseId } from '@/lib/services/personService';
 import { findPersonsNearby } from '@/lib/services/proximityService';
 import { getVisibleProfile } from '@/lib/services/privacyService';
+import { cache, CACHE_TTL } from '@/lib/cache';
 import { z } from 'zod';
 
 /**
@@ -59,15 +60,29 @@ export async function GET(request: NextRequest) {
 
     const { lat, lng, radius = 50, limit = 20 } = validationResult.data;
 
-    // Find nearby persons (sorted by proximity, then matching connection style)
-    const nearbyPersons = await findPersonsNearby({
-      latitude: lat,
-      longitude: lng,
-      radiusKm: radius,
-      currentUserId: person.id,
-      limit,
-      userConnectionStyle: person.connectionStyle,
-    });
+    // Create cache key based on search parameters
+    const cacheKey = `nearby-persons:${person.id}:${lat}:${lng}:${radius}:${limit}`;
+
+    // Check cache first (3 min TTL)
+    const cachedPersons = cache.get<any[]>(cacheKey, CACHE_TTL.NEARBY_PERSONS);
+
+    let nearbyPersons;
+    if (cachedPersons !== null) {
+      nearbyPersons = cachedPersons;
+    } else {
+      // Cache miss - query database
+      nearbyPersons = await findPersonsNearby({
+        latitude: lat,
+        longitude: lng,
+        radiusKm: radius,
+        currentUserId: person.id,
+        limit,
+        userConnectionStyle: person.connectionStyle,
+      });
+
+      // Store in cache
+      cache.set(cacheKey, nearbyPersons);
+    }
 
     // Apply privacy filtering to each person (now with interests already fetched)
     const filteredPersons = nearbyPersons

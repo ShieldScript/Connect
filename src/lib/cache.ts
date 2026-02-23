@@ -77,7 +77,8 @@ export { globalCache as cache };
  * Cache TTLs
  */
 export const CACHE_TTL = {
-  NEARBY_COUNT: 5 * 60 * 1000, // 5 minutes
-  UNREAD_COUNT: 2 * 60 * 1000, // 2 minutes
-  PROFILE: 10 * 60 * 1000,     // 10 minutes
+  NEARBY_COUNT: 5 * 60 * 1000,   // 5 minutes
+  NEARBY_PERSONS: 3 * 60 * 1000, // 3 minutes - for actual persons list
+  UNREAD_COUNT: 2 * 60 * 1000,   // 2 minutes
+  PROFILE: 10 * 60 * 1000,       // 10 minutes
 } as const;
