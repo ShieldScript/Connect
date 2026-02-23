@@ -473,19 +473,6 @@ export default async function Home() {
                 </Link>
               </div>
             </section>
-
-            {/* Developer Settings Link (Development Only) */}
-            {process.env.NODE_ENV === 'development' && (
-              <div className="mt-8 pt-6 border-t border-gray-200">
-                <Link
-                  href="/dev-settings"
-                  className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition"
-                >
-                  <span>⚙️</span>
-                  <span className="font-semibold">Developer Settings</span>
-                </Link>
-              </div>
-            )}
           </div>
         )}
       </main>
