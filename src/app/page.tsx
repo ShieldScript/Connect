@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
-import { Prisma } from '@prisma/client'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { ChevronRight, Users2, Map, Hammer, Radio, MapPin, Bell, ArrowRight, Shield, Users } from 'lucide-react'
@@ -184,22 +183,29 @@ export default async function Home() {
       const huddleIds = enrichedPerson.memberships.map(m => m.groupId);
 
       try {
-        // Single aggregated query for all unread counts
+        // Single aggregated query for all unread counts using IN clause
+        // UUIDs are safe (from database), but escape as precaution
+        const escapedIds = huddleIds
+          .map(id => id.replace(/'/g, "''"))
+          .map(id => `'${id}'`)
+          .join(',');
+
         const unreadCounts = await Promise.race([
-          prisma.$queryRaw<Array<{ huddleId: string; count: number }>>`
-            SELECT
+          prisma.$queryRawUnsafe<Array<{ huddleId: string; count: number }>>(
+            `SELECT
               hm."huddleId",
               COUNT(*)::int as count
             FROM "HuddleMessage" hm
             INNER JOIN "GroupMembership" gm ON gm."groupId" = hm."huddleId"
             WHERE
-              hm."huddleId" = ANY(ARRAY[${Prisma.join(huddleIds)}]::text[])
-              AND hm."senderId" != ${enrichedPerson.id}
+              hm."huddleId" IN (${escapedIds})
+              AND hm."senderId" != $1
               AND hm."deletedAt" IS NULL
-              AND gm."personId" = ${enrichedPerson.id}
+              AND gm."personId" = $1
               AND hm."createdAt" > COALESCE(gm."lastReadAt", gm."joinedAt", '1970-01-01'::timestamp)
-            GROUP BY hm."huddleId"
-          `,
+            GROUP BY hm."huddleId"`,
+            enrichedPerson.id
+          ),
           new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Huddles query timeout')), 10000)
           )
