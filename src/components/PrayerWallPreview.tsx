@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { HandHeart, ArrowRight, Heart } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -9,35 +8,19 @@ interface Prayer {
   id: string;
   content: string;
   prayerCount: number;
-  createdAt: string;
+  createdAt: Date | string;
   author: {
     id: string;
     displayName: string;
   };
+  userPrayed?: boolean;
 }
 
-export function PrayerWallPreview() {
-  const [prayers, setPrayers] = useState<Prayer[]>([]);
-  const [loading, setLoading] = useState(true);
+interface PrayerWallPreviewProps {
+  prayers: Prayer[];
+}
 
-  useEffect(() => {
-    fetchRecentPrayers();
-  }, []);
-
-  const fetchRecentPrayers = async () => {
-    try {
-      const response = await fetch('/api/prayers');
-      if (!response.ok) throw new Error('Failed to fetch prayers');
-
-      const data = await response.json();
-      // Get first 3 prayers
-      setPrayers((data.prayers || []).slice(0, 3));
-    } catch (error) {
-      console.error('Failed to fetch prayers:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+export function PrayerWallPreview({ prayers }: PrayerWallPreviewProps) {
 
   const getInitials = (name: string) => {
     return name
@@ -53,7 +36,7 @@ export function PrayerWallPreview() {
     return text.slice(0, maxLength) + '...';
   };
 
-  if (loading || prayers.length === 0) return null;
+  if (prayers.length === 0) return null;
 
   return (
     <section className="mb-8">

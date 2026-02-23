@@ -105,8 +105,8 @@ export function FellowsSection({ station, currentUserLat, currentUserLng, savedR
     }, 600);
   };
 
-  // Show first 6 brothers in horizontal scroll
-  const visibleFellows = allFellows.slice(0, 6);
+  // Show first 4 brothers in horizontal scroll (Proximity Filter: focused, intentional connections)
+  const visibleFellows = allFellows.slice(0, 4);
 
   // Helper: Get archetype icon with unique icons per archetype
   const getArchetypeIcon = (archetype: string) => {
@@ -159,7 +159,7 @@ export function FellowsSection({ station, currentUserLat, currentUserLng, savedR
           </div>
         </div>
         <div className="flex flex-wrap gap-3">
-          {[...Array(6)].map((_, i) => (
+          {[...Array(4)].map((_, i) => (
             <div
               key={i}
               className="bg-white border border-gray-200 rounded-lg p-3 min-w-[280px] max-w-[320px] animate-pulse"

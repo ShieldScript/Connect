@@ -158,7 +158,7 @@ export default async function Home() {
   // Parallelize nearby count and huddle queries
   const savedRadius = person.proximityRadiusKm || 5;
 
-  const [nearbyCount, myHuddles] = await Promise.all([
+  const [nearbyCount, myHuddles, recentPrayers] = await Promise.all([
     // Query 1: Nearby count with timeout
     (async () => {
       if (!person.latitude || !person.longitude) return 0;
@@ -241,6 +241,43 @@ export default async function Home() {
           membershipId: membership.id,
         }));
       }
+    })(),
+
+    // Query 3: Recent prayers for Prayer Wall preview
+    (async () => {
+      try {
+        const prayers = await prisma.prayerPost.findMany({
+          where: { deletedAt: null },
+          include: {
+            author: {
+              select: {
+                id: true,
+                displayName: true,
+              },
+            },
+            prayers: {
+              where: { prayerId: person.id },
+              select: { id: true },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 3, // Limit to 3 for dashboard preview
+        });
+
+        // Transform to include userPrayed flag
+        return prayers.map((prayer) => ({
+          id: prayer.id,
+          content: prayer.content,
+          prayerCount: prayer.prayerCount,
+          createdAt: prayer.createdAt,
+          updatedAt: prayer.updatedAt,
+          author: prayer.author,
+          userPrayed: prayer.prayers.length > 0,
+        }));
+      } catch (error) {
+        console.error('Error fetching recent prayers:', error);
+        return [];
+      }
     })()
   ]);
 
@@ -260,6 +297,9 @@ export default async function Home() {
     if (a.unreadCount === 0 && b.unreadCount > 0) return 1;
     return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
   });
+
+  // Limit to top 3 huddles (Focus Rule: prioritize what matters most)
+  const displayHuddles = myHuddles.slice(0, 3);
 
     return (
       <DashboardClient
@@ -364,7 +404,7 @@ export default async function Home() {
             />
 
             {/* My Huddles - Horizontal Scroll */}
-            {myHuddles.length > 0 && (
+            {displayHuddles.length > 0 && (
               <section className="mb-8">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-bold text-gray-900 uppercase tracking-wide">My Huddles</h2>
@@ -379,7 +419,7 @@ export default async function Home() {
 
                 {/* Horizontal Scroll Container */}
                 <div className="flex gap-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                  {myHuddles.map((huddle) => (
+                  {displayHuddles.map((huddle) => (
                     <Link
                       key={huddle.id}
                       href="/huddles"
@@ -412,7 +452,7 @@ export default async function Home() {
             )}
 
             {/* Prayer Wall Preview */}
-            <PrayerWallPreview />
+            <PrayerWallPreview prayers={recentPrayers} />
 
             {/* Active Opportunities - Banner Style with Micro-Copy */}
             <section>
