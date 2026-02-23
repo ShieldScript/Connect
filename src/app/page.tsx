@@ -331,17 +331,27 @@ export default async function Home() {
           <div className="p-8">
             {/* Identity Header - Stewardship Brief */}
             <div className="mb-8 bg-white border border-gray-200 rounded-lg p-6">
-              <h1 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                Welcome Back,
-              </h1>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                {person.displayName}
-              </h2>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-gray-700 uppercase tracking-wide">Archetype:</span>
-                <span className="text-sm font-bold text-blue-700 uppercase">
-                  {formatArchetype(archetypeName)}
-                </span>
+              <div className="flex items-start justify-between">
+                {/* Left: Welcome & Archetype */}
+                <div>
+                  <h1 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                    Welcome Back,
+                  </h1>
+                  <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                    {person.displayName}
+                  </h2>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-gray-700 uppercase tracking-wide">Archetype:</span>
+                    <span className="text-sm font-bold text-blue-700 uppercase">
+                      {formatArchetype(archetypeName)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Right: Skills Count */}
+                <div className="flex items-center gap-1.5 text-sm">
+                  <span className="text-gray-500">{interests.length} Skills</span>
+                </div>
               </div>
             </div>
 
