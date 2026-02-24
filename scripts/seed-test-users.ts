@@ -28,9 +28,9 @@ const supabaseAdmin = createClient(
 
 const testUsers = [
   {
-    email: 'gil.motina@servingtheking.com',
+    email: 'gil.molina@servingtheking.com',
     password: 'testpass123',
-    displayName: 'Gil Motina',
+    displayName: 'Gil Molina',
   },
   {
     email: 'paul.lau@servingtheking.com',
@@ -66,8 +66,8 @@ async function main() {
 
       if (signUpError) {
         // User might already exist, try to get them
-        if (signUpError.message.includes('already registered')) {
-          console.log(`   ⚠️  User already exists in Supabase Auth, fetching...`);
+        if (signUpError.message.includes('already registered') || signUpError.code === 'email_exists') {
+          console.log(`   ⚠️  User already exists in Supabase Auth, fetching and updating password...`);
 
           // List users and find by email
           const { data: users, error: listError } = await supabaseAdmin.auth.admin.listUsers();
@@ -79,6 +79,18 @@ async function main() {
           if (!authUser) {
             throw new Error(`Could not find existing user ${user.email}`);
           }
+
+          // Update password for existing user
+          const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+            authUser.id,
+            { password: user.password }
+          );
+
+          if (updateError) {
+            console.log(`   ⚠️  Could not update password:`, updateError.message);
+          } else {
+            console.log(`   ✅ Password updated to: ${user.password}`);
+          }
         } else {
           throw signUpError;
         }
@@ -89,9 +101,17 @@ async function main() {
       console.log(`   ✅ Supabase Auth user ready (ID: ${authUser.id})`);
 
       // 2. Create or update Person record
-      const existingPerson = await prisma.person.findUnique({
+      // Check by both supabaseUserId AND email (in case of email change or old records)
+      let existingPerson = await prisma.person.findUnique({
         where: { supabaseUserId: authUser.id },
       });
+
+      if (!existingPerson) {
+        // Also check by email in case there's an old record
+        existingPerson = await prisma.person.findUnique({
+          where: { email: user.email },
+        });
+      }
 
       if (existingPerson) {
         console.log(`   ⚠️  Person record already exists, updating...`);
@@ -99,7 +119,9 @@ async function main() {
         await prisma.person.update({
           where: { id: existingPerson.id },
           data: {
+            supabaseUserId: authUser.id, // Update to correct supabaseUserId
             displayName: user.displayName,
+            email: user.email,
             onboardingLevel: 0, // Reset to test onboarding
           },
         });
