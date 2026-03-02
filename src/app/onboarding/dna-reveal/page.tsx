@@ -232,38 +232,8 @@ export default function DNARevealPage() {
       nextButtonIcon={<ArrowRight className="w-4 h-4" />}
     >
       <div className="space-y-8">
-        {/* UI IMPROVEMENT #1: Dual-Core Header - Radar Chart + Alignment Score */}
-        {isReady && dnaAnalysis && (
-          <div className="grid md:grid-cols-2 gap-6 mb-12">
-            {/* Left: Radar Chart */}
-            <div className="animate-fade-in">
-              <DNARevealCard
-                hexacoScores={hexacoScores}
-                archetype={archetype}
-                isLoading={false}
-              />
-            </div>
-
-            {/* Right: Alignment Score */}
-            <div className="flex flex-col justify-center">
-              <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl p-8 text-white text-center">
-                <p className="text-sm text-purple-200 mb-2 uppercase tracking-wide font-semibold">
-                  DNA Alignment Score
-                </p>
-                <div className="flex items-baseline justify-center gap-2 mb-3">
-                  <span className="text-7xl font-bold">{dnaAnalysis.overallAlignment}</span>
-                  <span className="text-3xl text-purple-200">%</span>
-                </div>
-                <p className="text-purple-100 text-sm">
-                  How your natural temperament aligns with your gifts and calling
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Show just radar chart if alignment analysis not ready */}
-        {isReady && !dnaAnalysis && (
+        {/* DNA Reveal Card */}
+        {isReady && (
           <div className="animate-fade-in">
             <DNARevealCard
               hexacoScores={hexacoScores}

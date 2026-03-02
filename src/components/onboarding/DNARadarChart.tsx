@@ -1,7 +1,12 @@
 'use client';
 
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Tooltip } from 'recharts';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, HelpCircle } from 'lucide-react';
+import {
+  Tooltip as UITooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface HexacoScores {
   H: number; // Honesty-Humility
@@ -19,6 +24,28 @@ interface DNARadarChartProps {
 }
 
 export default function DNARadarChart({ scores, archetype, className = '' }: DNARadarChartProps) {
+  // Detailed HEXACO explanations
+  const hexacoDetails: Record<string, { fullDescription: string }> = {
+    H: {
+      fullDescription: 'Measures fairness, sincerity, and avoidance of manipulation. High scores indicate humility and integrity; low scores suggest comfort with ambition and self-promotion.',
+    },
+    E: {
+      fullDescription: 'Reflects emotional sensitivity, anxiety, and need for emotional support. High scores show deep emotional connection; low scores indicate emotional stability and calm.',
+    },
+    X: {
+      fullDescription: 'Determines social confidence and energy from group settings. High scores gain energy from people; low scores recharge through solitude and prefer smaller gatherings.',
+    },
+    A: {
+      fullDescription: 'Measures patience, tolerance, and willingness to compromise. High scores seek harmony and cooperation; low scores value honesty even when it creates tension.',
+    },
+    C: {
+      fullDescription: 'Reflects organization, planning, and self-discipline. High scores bring structure and follow-through; low scores prefer flexibility and spontaneity.',
+    },
+    O: {
+      fullDescription: 'Measures intellectual curiosity and appreciation for beauty and ideas. High scores embrace new perspectives; low scores value tradition and proven approaches.',
+    },
+  };
+
   // Transform HEXACO scores into chart data
   const chartData = [
     {
@@ -125,22 +152,32 @@ export default function DNARadarChart({ scores, archetype, className = '' }: DNA
       {/* Legend */}
       <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-3">
         {chartData.map((dim) => (
-          <div
-            key={dim.short}
-            className="bg-white rounded-lg p-3 border border-gray-200"
-          >
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-bold text-purple-600">
-                {dim.short}
-              </span>
-              <span className="text-lg font-bold text-gray-900">
-                {dim.score.toFixed(1)}
-              </span>
-            </div>
-            <p className="text-xs text-gray-600 leading-tight">
-              {dim.description}
-            </p>
-          </div>
+          <UITooltip key={dim.short}>
+            <TooltipTrigger asChild>
+              <div className="bg-white rounded-lg p-3 border border-gray-200 cursor-help hover:border-purple-300 transition-colors">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs font-bold text-purple-600">
+                      {dim.short}
+                    </span>
+                    <HelpCircle className="w-3 h-3 text-gray-400" />
+                  </div>
+                  <span className="text-lg font-bold text-gray-900">
+                    {dim.score.toFixed(1)}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600 leading-tight">
+                  {dim.description}
+                </p>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs bg-gray-900 text-white p-3">
+              <p className="font-bold mb-1">{dim.dimension}</p>
+              <p className="text-xs leading-relaxed">
+                {hexacoDetails[dim.short].fullDescription}
+              </p>
+            </TooltipContent>
+          </UITooltip>
         ))}
       </div>
 
