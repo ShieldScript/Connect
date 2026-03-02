@@ -209,6 +209,11 @@ export default function DNARevealPage() {
     router.push('/onboarding/covenant');
   };
 
+  // Disable continue button while AI is generating
+  const isAnalyzing = isAnalyzingHexaco || isAnalyzingDna;
+  const analysisComplete = hexacoAnalysis && dnaAnalysis;
+  const canContinue = !isAnalyzing && analysisComplete;
+
   if (!hexacoScores || !archetype) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
@@ -228,7 +233,8 @@ export default function DNARevealPage() {
       quote="For we are God's handiwork, created in Christ Jesus to do good works, which God prepared in advance for us to do. — Ephesians 2:10"
       onNext={handleNext}
       onBack={handleBack}
-      nextButtonText="Continue to Covenant"
+      nextButtonText={isAnalyzing ? "Analyzing..." : "Continue to Covenant"}
+      nextButtonDisabled={!canContinue}
       nextButtonIcon={<ArrowRight className="w-4 h-4" />}
     >
       <div className="space-y-8">
