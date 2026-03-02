@@ -6,58 +6,79 @@ datasource db {
   provider = "postgresql"
 }
 
+// =====================================
+// CORE USER & PROFILE
+// =====================================
+
 model Person {
-  id              String  @id @default(uuid())
-  supabaseUserId  String  @unique
-  email           String  @unique
+  id             String @id @default(uuid())
+  supabaseUserId String @unique
+  email          String @unique
+
+  // Basic Profile
   displayName     String
-  phone           String?
   bio             String?
   profileImageUrl String?
 
-  // Location fields
+  // Location (keeping existing PostGIS)
   latitude          Float?
   longitude         Float?
   location          Unsupported("geography")?
+  community         String?
   city              String?
   region            String?
-  community         String?
   proximityRadiusKm Int                       @default(5)
   locationPrivacy   LocationPrivacy           @default(APPROXIMATE)
 
-  // Profile fields
-  ageRange          String?
-  gender            String?
-  archetype         String?
-  connectionStyle   String?
-  personalityTraits Json?
+  // Onboarding Progress
+  onboardingStep     Int     @default(0) // 0-18 steps
+  onboardingComplete Boolean @default(false)
 
-  // Preferences and signals
-  groupPreferences    Json?
-  leadershipSignals   Json?
-  isPotentialShepherd Boolean @default(false)
+  // HEXACO-60 Assessment (Step 5)
+  hexacoResponses     Json?      // Raw 60 responses: { "1": 4, "2": 2, ... }
+  hexacoScores        Json?      // Calculated scores: { "H": 3.2, "E": 4.1, ... }
+  hexacoArchetype     String?    // e.g., "THE DILIGENT WATCHMAN"
+  hexacoCompletedAt   DateTime?
+
+  // AI-Generated Insights (Phase 1)
+  hexacoInsights          String?    @db.Text  // AI-generated personality interpretation
+  hexacoInsightsGeneratedAt DateTime?           // Cache timestamp
 
   // Covenant/Spiritual Fields
-  churchAffiliation   String?
-  spiritualGoals      String[] @default([])
-  accountabilityAreas String[] @default([])
-  covenantAgreedAt    DateTime?
-  covenantData        Json?
+  covenantAgreedAt DateTime?
+  covenantData     Json?
 
   // Safety and blocking
   blockedPersons String[] @default([])
   safetyFlags    String[] @default([])
 
   // Metadata
-  onboardingLevel Int       @default(0)
-  lastActiveAt    DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  lastActiveAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  // Relations
+  // Relations - 11 Spiritual Resume Layers
+  naturalGiftings      PersonNaturalGifting[]
+  supernaturalGiftings PersonSupernaturalGifting[]
+  ministryExperiences  PersonMinistryExperience[]
+  milestones           PersonMilestone[]
+  growthAreas          PersonGrowthArea[]
+  leadershipPatterns   PersonLeadershipPattern[]
+  lifeStages           PersonLifeStage[]
+  callings             PersonCalling[]
+  healingThemes        PersonHealingTheme[]
+  practices            PersonPractice[]
+  boundaries           PersonBoundary[]
+
+  // Interest System (Enum-based)
+  interests PersonInterest[]
+
+  // Legacy Activity System (being deprecated)
+  activities PersonActivity[]
+
+  // Existing Relations (keep for other features)
   createdGroups         Group[]              @relation("GroupCreator")
   memberships           GroupMembership[]
-  interests             PersonInterest[]
   safetyReportsCreated  SafetyReport[]       @relation("ReporterReports")
   safetyReportsReceived SafetyReport[]       @relation("ReportedPersonReports")
   compatibilityScores   CompatibilityScore[] @relation("PersonScores")
@@ -67,39 +88,716 @@ model Person {
   notifications         Notification[]
 
   @@index([latitude, longitude])
-  @@index([onboardingLevel])
+  @@index([onboardingComplete])
+  @@index([onboardingStep])
   @@index([location], map: "idx_person_location", type: Gist)
 }
 
-model Interest {
-  id          String           @id @default(uuid())
-  name        String           @unique
-  category    String
-  description String?
-  popularity  Int              @default(0)
-  subcategory String?
-  metadata    Json?
-  createdAt   DateTime         @default(now())
-  persons     PersonInterest[]
+// =====================================
+// INTEREST & ACTIVITY SYSTEM
+// =====================================
 
-  @@index([category])
-  @@index([popularity])
+model InterestCategory {
+  id          String  @id @default(uuid())
+  name        String  @unique // e.g., "Outdoor & Adventure"
+  slug        String  @unique // e.g., "outdoor_adventure"
+  description String?
+  order       Int // 1-8 for display order
+
+  activities Activity[]
+
+  createdAt DateTime @default(now())
+
+  @@index([order])
+}
+
+model Activity {
+  id          String           @id @default(uuid())
+  name        String // e.g., "Hiking"
+  categoryId  String
+  category    InterestCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  description String?
+
+  personActivities PersonActivity[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([name, categoryId])
+  @@index([categoryId])
+}
+
+model PersonActivity {
+  id         String @id @default(uuid())
+  personId   String
+  activityId String
+
+  // 1-5 Scale as per document
+  proficiencyLevel Int // 1=Rarely, 2=Occasionally, 3=Moderately, 4=Frequently, 5=Core
+
+  // Privacy
+  privacy PrivacyLevel @default(GROUP)
+
+  person   Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([personId, activityId])
+  @@index([personId])
+  @@index([proficiencyLevel])
+}
+
+// =====================================
+// INTERESTS (ENUM-BASED)
+// =====================================
+
+enum InterestType {
+  // Outdoor & Adventure (29)
+  HIKING
+  BACKPACKING
+  SCRAMBLING
+  TREKKING
+  TRAIL_RUNNING
+  CAMPING
+  BUSHCRAFT
+  SURVIVAL_SKILLS
+  MOUNTAINEERING
+  ALPINISM
+  ORIENTEERING
+  NAVIGATION
+  HUNTING
+  FISHING
+  CONSERVATION
+  OVERLANDING
+  OFF_ROADING
+  SAILING
+  CANOEING
+  KAYAKING
+  RAFTING
+  SCUBA_DIVING
+  SURFING
+  SKIING
+  SNOWBOARDING
+  PARAGLIDING
+  CAVING
+  HORSEBACK_RIDING
+  STARGAZING
+
+  // Craftsmanship, Trades & Maker (20)
+  WOODWORKING
+  CARPENTRY
+  METALWORKING
+  WELDING
+  AUTOMOTIVE_REPAIR
+  LEATHERWORKING
+  BLACKSMITHING
+  KNIFE_MAKING
+  ELECTRONICS
+  ROBOTICS
+  THREE_D_PRINTING
+  BREWING
+  DISTILLING
+  CONSTRUCTION
+  PLUMBING
+  ELECTRICAL_WORK
+  HVAC
+  MASONRY
+  TILE_WORK
+  RESTORATION
+
+  // Physicality, Combat & Team Sports (17)
+  MARTIAL_ARTS
+  BOXING
+  MMA
+  JUJITSU
+  WRESTLING
+  WEIGHTLIFTING
+  POWERLIFTING
+  CROSSFIT
+  RUNNING
+  CYCLING
+  SWIMMING
+  BASKETBALL
+  SOCCER
+  FOOTBALL
+  BASEBALL
+  HOCKEY
+  RUGBY
+
+  // Culinary, Fire & Food Systems (12)
+  GRILLING
+  SMOKING_MEAT
+  BBQ
+  BAKING
+  COOKING
+  FERMENTATION
+  CURING_MEAT
+  BUTCHERY
+  GARDENING
+  HOMESTEADING
+  FOOD_PRESERVATION
+  COFFEE_ROASTING
+
+  // Strategy, Mentorship & Leadership (13)
+  CHESS
+  BOARD_GAMES
+  POKER
+  TACTICAL_PLANNING
+  COACHING
+  MENTORING
+  TEACHING
+  PUBLIC_SPEAKING
+  WRITING
+  BUSINESS_STRATEGY
+  ENTREPRENEURSHIP
+  INVESTING
+  FINANCE
+
+  // Faith, Formation & Relational Care (18)
+  BIBLE_STUDY
+  THEOLOGY
+  APOLOGETICS
+  PRAYER
+  WORSHIP
+  EVANGELISM
+  DISCIPLESHIP
+  COUNSELING
+  PASTORAL_CARE
+  SPIRITUAL_DIRECTION
+  MARRIAGE_FAMILY
+  MENS_MINISTRY
+  YOUTH_MINISTRY
+  SMALL_GROUPS
+  MISSIONS
+  CHURCH_PLANTING
+  RETREAT_FACILITATION
+  SPIRITUAL_FORMATION
+
+  // Service, Civic & Community Action (12)
+  VOLUNTEERING
+  COMMUNITY_ORGANIZING
+  NONPROFIT_WORK
+  ADVOCACY
+  EMERGENCY_RESPONSE
+  DISASTER_RELIEF
+  HOMELESS_OUTREACH
+  FOOD_BANK
+  PRISON_MINISTRY
+  VETERANS_SUPPORT
+  ADDICTION_RECOVERY
+  ENVIRONMENTAL_STEWARDSHIP
+
+  // Creative & Cultural (15)
+  PHOTOGRAPHY
+  VIDEOGRAPHY
+  GRAPHIC_DESIGN
+  MUSIC
+  GUITAR
+  DRUMS
+  PIANO
+  SONGWRITING
+  PAINTING
+  DRAWING
+  SCULPTURE
+  POTTERY
+  FILM
+  LITERATURE
+  POETRY
+
+  // Custom
+  CUSTOM
 }
 
 model PersonInterest {
-  id               String   @id @default(uuid())
-  personId         String
-  interestId       String
-  proficiencyLevel Int      @default(3)
-  createdAt        DateTime @default(now())
-  interest         Interest @relation(fields: [interestId], references: [id], onDelete: Cascade)
-  person           Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  id        String       @id @default(uuid())
+  personId  String
+  type      InterestType
+  customValue String?    // If type=CUSTOM
 
-  @@unique([personId, interestId])
+  // 1-5 Scale: 1=Curious, 2=Casual, 3=Regular, 4=Active, 5=Core
+  proficiency Int
+
+  // Privacy
+  privacy PrivacyLevel @default(GROUP)
+
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([personId, type, customValue])
   @@index([personId])
-  @@index([interestId])
-  @@index([proficiencyLevel])
+  @@index([proficiency])
 }
+
+// =====================================
+// LAYER 1: NATURAL GIFTINGS
+// =====================================
+
+enum GiftingType {
+  COMMUNICATION
+  PROBLEM_SOLVING
+  ORGANIZATION
+  CREATIVITY
+  EMPATHY
+  ANALYTICAL_THINKING
+  HOSPITALITY
+  TEACHING
+  LEADERSHIP
+  SERVICE
+  ARTISTIC_ABILITY
+  TECHNICAL_SKILLS
+  ATHLETICISM
+  MUSICAL_ABILITY
+  STRATEGIC_PLANNING
+  CUSTOM
+}
+
+model PersonNaturalGifting {
+  id         String      @id @default(uuid())
+  personId   String
+  type       GiftingType
+  customName String? // If type=CUSTOM
+
+  // 1-5 Scale: 1=Rarely, 2=Occasionally, 3=Moderately, 4=Frequently, 5=Core
+  level Int // 1-5
+
+  // Privacy
+  privacy PrivacyLevel @default(PUBLIC)
+
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([personId, type, customName])
+  @@index([personId])
+  @@index([level])
+}
+
+// =====================================
+// LAYER 2: SUPERNATURAL GIFTINGS
+// =====================================
+
+enum SupernaturalGiftType {
+  PROPHECY
+  HEALING
+  DISCERNMENT
+  TONGUES
+  INTERPRETATION
+  FAITH
+  MIRACLES
+  WISDOM
+  KNOWLEDGE
+  EXHORTATION
+  GIVING
+  LEADERSHIP
+  MERCY
+  APOSTLESHIP
+  EVANGELISM
+  SHEPHERDING
+  TEACHING
+  CUSTOM
+}
+
+model PersonSupernaturalGifting {
+  id         String               @id @default(uuid())
+  personId   String
+  type       SupernaturalGiftType
+  customName String?
+
+  // 1-5 Scale: 1=Not experienced, 2=Rarely, 3=Occasionally, 4=Frequently, 5=Core
+  level Int
+
+  // Medium sensitivity
+  privacy PrivacyLevel @default(GROUP)
+
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([personId, type, customName])
+  @@index([personId])
+  @@index([level])
+}
+
+// =====================================
+// LAYER 3: MINISTRY EXPERIENCE
+// =====================================
+
+enum MinistryType {
+  TEACHING
+  PREACHING
+  WORSHIP_LEADING
+  SMALL_GROUP
+  YOUTH_MINISTRY
+  MENS_MINISTRY
+  OUTREACH
+  MISSIONS
+  PASTORAL_CARE
+  ADMINISTRATION
+  HOSPITALITY
+  SERVICE
+  COUNSELING
+  PRAYER_MINISTRY
+  CREATIVE_ARTS
+  TECHNICAL_AV
+  CUSTOM
+}
+
+model PersonMinistryExperience {
+  id         String       @id @default(uuid())
+  personId   String
+  type       MinistryType
+  customName String?
+
+  // 1-5 Scale: 1=No experience, 2=Limited, 3=Moderate, 4=Regular, 5=Extensive/Leader
+  level Int
+
+  privacy PrivacyLevel @default(PUBLIC)
+
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([personId, type, customName])
+  @@index([personId])
+  @@index([level])
+}
+
+// =====================================
+// LAYER 4: SPIRITUAL MILESTONES
+// =====================================
+
+enum MilestoneType {
+  CONVERSION_BAPTISM
+  LIFE_TRANSITION
+  CALLING
+  HEALING_DELIVERANCE
+  CRISIS_TRIAL
+  BREAKTHROUGH
+  RECONCILIATION
+  SABBATICAL
+  LOSS_GRIEF
+  MARRIAGE_FAMILY
+  CAREER_SHIFT
+  SPIRITUAL_AWAKENING
+  CUSTOM
+}
+
+model PersonMilestone {
+  id          String        @id @default(uuid())
+  personId    String
+  type        MilestoneType
+  customName  String?
+  description String?       @db.Text
+
+  // 1-5 Scale: 1=Rarely reflect, 2=Occasionally, 3=Sometimes, 4=Regularly, 5=Deeply integrate
+  significance Int
+
+  // Medium-High sensitivity
+  privacy PrivacyLevel @default(PRIVATE)
+
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([personId])
+  @@index([type])
+}
+
+// =====================================
+// LAYER 5: AREAS OF GROWTH & NEED
+// =====================================
+
+enum GrowthAreaType {
+  FORGIVENESS
+  SELF_REFLECTION
+  MINDFULNESS
+  COMPASSION
+  RELEASING_RESENTMENT
+  INNER_STILLNESS
+  SURRENDERING_CONTROL
+  HEALING_RELATIONSHIPS
+  LETTING_GO_ATTACHMENTS
+  TRUSTING_GUIDANCE
+  CUSTOM
+}
+
+model PersonGrowthArea {
+  id         String         @id @default(uuid())
+  personId   String
+  type       GrowthAreaType
+  customName String?
+
+  // 1-5 Scale: 1=Not focus, 2=Acknowledged, 3=Exploring, 4=Progress, 5=Significant growth
+  level Int
+
+  // HIGH sensitivity
+  privacy PrivacyLevel @default(PRIVATE)
+
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([personId, type, customName])
+  @@index([personId])
+}
+
+// =====================================
+// LAYER 6: LEADERSHIP PATTERNS
+// =====================================
+
+enum LeadershipStyle {
+  COMMANDING
+  VISIONARY
+  AFFILIATIVE
+  DEMOCRATIC
+  COACHING
+  PACESETTING
+  TRANSFORMATIONAL
+  TRANSACTIONAL
+  SERVANT
+  LAISSEZ_FAIRE
+  ABUSIVE // For self-awareness/healing
+  CUSTOM
+}
+
+model PersonLeadershipPattern {
+  id         String          @id @default(uuid())
+  personId   String
+  style      LeadershipStyle
+  customName String?
+
+  // 1-5 Scale: 1=Never, 2=Rarely, 3=Sometimes, 4=Often, 5=Very often
+  frequency Int
+
+  privacy PrivacyLevel @default(GROUP)
+
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([personId, style, customName])
+  @@index([personId])
+}
+
+// =====================================
+// LAYER 7: LIFE STAGE THEMES
+// =====================================
+
+enum LifeStageType {
+  SINGLE_YOUNG_ADULT
+  NEWLY_MARRIED
+  PARENTING_YOUNG
+  PARENTING_TEENS
+  EMPTY_NEST
+  MIDLIFE_TRANSITION
+  RETIREMENT
+  CAREER_CHANGE
+  GRIEF_LOSS
+  GRANDPARENTING
+  HEALTH_TRANSITION
+  CUSTOM
+}
+
+model PersonLifeStage {
+  id         String        @id @default(uuid())
+  personId   String
+  type       LifeStageType
+  customName String?
+
+  // 1-5 Scale: 1=Just entering, 2=Early, 3=Mid, 4=Late, 5=Transitioning out
+  stage Int
+
+  privacy PrivacyLevel @default(GROUP)
+
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([personId, type, customName])
+  @@index([personId])
+}
+
+// =====================================
+// LAYER 8: CALLING TRAJECTORIES
+// =====================================
+
+enum CallingType {
+  DIVINE_PURPOSE
+  INNER_GUIDANCE
+  LIFE_PATH_CLARITY
+  SERVICE_ORIENTED
+  CREATIVE_EXPRESSION
+  LEADERSHIP
+  TEACHING_MENTORSHIP
+  HEALING_RESTORATION
+  JUSTICE_ADVOCACY
+  SPIRITUAL_EXPLORATION
+  CUSTOM
+}
+
+model PersonCalling {
+  id         String      @id @default(uuid())
+  personId   String
+  type       CallingType
+  customName String?
+
+  // 1-5 Scale: 1=Unclear, 2=Exploring, 3=Some clarity, 4=Pursuing, 5=Fully aligned
+  clarity Int
+
+  privacy PrivacyLevel @default(PUBLIC)
+
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([personId, type, customName])
+  @@index([personId])
+}
+
+// =====================================
+// LAYER 9: WOUNDS & HEALING THEMES
+// =====================================
+
+enum HealingThemeType {
+  RELEASING_RESENTMENT
+  HEALING_RELATIONSHIPS
+  FORGIVENESS
+  INNER_HEALING
+  SELF_COMPASSION
+  TRAUMA_RECOVERY
+  LETTING_GO_ATTACHMENTS
+  ACCEPTANCE
+  COMPASSIONATE_REFLECTION
+  EMOTIONAL_RESTORATION
+  CUSTOM
+}
+
+model PersonHealingTheme {
+  id         String           @id @default(uuid())
+  personId   String
+  type       HealingThemeType
+  customName String?
+
+  // 1-5 Scale: 1=Not addressed, 2=Acknowledged, 3=Beginning, 4=Actively healing, 5=Significant healing
+  progress Int
+
+  // HIGH sensitivity - always private by default
+  privacy PrivacyLevel @default(PRIVATE)
+
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([personId, type, customName])
+  @@index([personId])
+}
+
+// =====================================
+// LAYER 10: RHYTHMS & PRACTICES
+// =====================================
+
+enum PracticeType {
+  PRAYER
+  BIBLE_STUDY
+  WORSHIP
+  FASTING
+  SABBATH_REST
+  JOURNALING
+  MEDITATION
+  SERVICE
+  COMMUNITY_GATHERING
+  GRATITUDE
+  NATURE_IMMERSION
+  ACTS_OF_KINDNESS
+  CUSTOM
+}
+
+model PersonPractice {
+  id         String       @id @default(uuid())
+  personId   String
+  type       PracticeType
+  customName String?
+
+  // 1-5 Scale: 1=Rarely, 2=Occasionally, 3=Monthly, 4=Weekly, 5=Daily/Integrated
+  frequency Int
+
+  privacy PrivacyLevel @default(PUBLIC)
+
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([personId, type, customName])
+  @@index([personId])
+}
+
+// =====================================
+// LAYER 11: BOUNDARIES & AVAILABILITY
+// =====================================
+
+enum BoundaryType {
+  WEEKDAY
+  WEEKEND
+  EVENING
+  EARLY_MORNING
+  TRAVEL_FLEXIBLE
+  FAMILY_COMMITMENTS
+  WORK_COMMITMENTS
+  MINISTRY_COMMITMENTS
+  SABBATICAL
+  HEALTH_LIMITATIONS
+  OPEN_SPONTANEOUS
+  PREFERS_SCHEDULED
+  CUSTOM
+}
+
+model PersonBoundary {
+  id         String       @id @default(uuid())
+  personId   String
+  type       BoundaryType
+  customName String?
+
+  // 1-5 Scale: 1=Rarely available, 2=Occasionally, 3=Moderately, 4=Frequently, 5=Fully available
+  availability Int
+
+  // HIGH sensitivity
+  privacy PrivacyLevel @default(PRIVATE)
+
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([personId, type, customName])
+  @@index([personId])
+}
+
+// =====================================
+// PRIVACY ENUM
+// =====================================
+
+enum PrivacyLevel {
+  PUBLIC // Visible to everyone
+  GROUP // Only visible in matched groups
+  PRIVATE // Only visible to user and with explicit consent
+}
+
+// =====================================
+// EXISTING MODELS (KEEP FOR OTHER FEATURES)
+// =====================================
 
 model SafetyReport {
   id               String       @id @default(uuid())
@@ -186,7 +884,7 @@ model GroupMembership {
   joinRequestedAt DateTime     @default(now())
   joinedAt        DateTime?
   lastEngagedAt   DateTime?
-  lastReadAt      DateTime?    // Track when user last read huddle messages
+  lastReadAt      DateTime? // Track when user last read huddle messages
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @default(now()) @updatedAt
   group           Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
@@ -222,16 +920,16 @@ model HuddleMessage {
 }
 
 model PrayerPost {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   authorId    String
-  content     String   @db.Text
-  prayerCount Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  content     String    @db.Text
+  prayerCount Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
-  author   Person           @relation("AuthoredPrayerPosts", fields: [authorId], references: [id], onDelete: Cascade)
-  prayers  PrayerResponse[]
+  author  Person           @relation("AuthoredPrayerPosts", fields: [authorId], references: [id], onDelete: Cascade)
+  prayers PrayerResponse[]
 
   @@index([createdAt(sort: Desc)])
   @@index([authorId])
@@ -275,6 +973,10 @@ model spatial_ref_sys {
   srtext    String? @db.VarChar(2048)
   proj4text String? @db.VarChar(2048)
 }
+
+// =====================================
+// EXISTING ENUMS
+// =====================================
 
 enum GroupType {
   HOBBY

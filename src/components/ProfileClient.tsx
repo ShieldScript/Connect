@@ -7,6 +7,8 @@ import { SkillsSection } from './profile/SkillsSection';
 import { LocationSection } from './profile/LocationSection';
 import { ConnectionStyleSection } from './profile/ConnectionStyleSection';
 import { SecuritySection } from './profile/SecuritySection';
+import HexacoInsightsCard from './profile/HexacoInsightsCard';
+import DNARevealCard from './onboarding/DNARevealCard';
 
 interface ProfileClientProps {
   person: PersonWithRelations;
@@ -26,6 +28,9 @@ export function ProfileClient({ person, interests }: ProfileClientProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [hexacoInsights, setHexacoInsights] = useState(person.hexacoInsights || null);
+  const [dnaAnalysis, setDnaAnalysis] = useState<any | null>(null);
+  const [isLoadingDNA, setIsLoadingDNA] = useState(false);
 
   // Edit mode states for each section
   const [isEditingBio, setIsEditingBio] = useState(false);
@@ -44,6 +49,30 @@ export function ProfileClient({ person, interests }: ProfileClientProps) {
     setBio(person.bio || '');
     setHowToConnect('');
   }, [person]);
+
+  // Fetch DNA analysis if HEXACO is complete
+  useEffect(() => {
+    const fetchDNAAnalysis = async () => {
+      if (person.hexacoScores && person.hexacoArchetype) {
+        setIsLoadingDNA(true);
+        try {
+          const res = await fetch('/api/ai/dna-analysis', {
+            method: 'POST',
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setDnaAnalysis(data.data);
+          }
+        } catch (error) {
+          console.error('Failed to fetch DNA analysis:', error);
+        } finally {
+          setIsLoadingDNA(false);
+        }
+      }
+    };
+
+    fetchDNAAnalysis();
+  }, [person.hexacoScores, person.hexacoArchetype]);
 
   // Track if changes have been made
   const hasChanges =
@@ -189,6 +218,34 @@ export function ProfileClient({ person, interests }: ProfileClientProps) {
           )}
         </div>
       </section>
+
+      {/* HEXACO Insights */}
+      {hexacoInsights && (
+        <HexacoInsightsCard
+          insights={hexacoInsights}
+          archetype={person.hexacoArchetype || null}
+          onRegenerate={async () => {
+            const res = await fetch('/api/ai/hexaco-insights', {
+              method: 'POST',
+            });
+            if (res.ok) {
+              const data = await res.json();
+              setHexacoInsights(data.data.insights);
+              router.refresh();
+            }
+          }}
+        />
+      )}
+
+      {/* DNA Reveal - Full Analysis */}
+      {person.hexacoScores && person.hexacoArchetype && (
+        <DNARevealCard
+          hexacoScores={person.hexacoScores as any}
+          archetype={person.hexacoArchetype}
+          analysis={dnaAnalysis}
+          isLoading={isLoadingDNA}
+        />
+      )}
 
       {/* Skills Section */}
       <SkillsSection interests={interests} />
