@@ -6,7 +6,7 @@ import { useOnboardingStore } from '@/store/onboardingStore';
 import { OnboardingStep } from '@/components/onboarding';
 import DNARevealCard from '@/components/onboarding/DNARevealCard';
 import { calculateHexacoScores, getArchetype } from '@/lib/hexacoScoring';
-import { Sparkles, ArrowRight, Loader2, Zap, Sprout, Users, Briefcase, Heart, CheckCircle, TrendingUp } from 'lucide-react';
+import { Sparkles, ArrowRight, Loader2, Zap, Sprout, Users, Briefcase, Heart, CheckCircle, TrendingUp, Link2 } from 'lucide-react';
 
 // Helper: Generate hash of data for cache invalidation
 function generateDataHash(data: any): string {
@@ -70,8 +70,16 @@ export default function DNARevealPage() {
     if (!hexacoScores || !archetype || hexacoAnalysis || isAnalyzingHexaco) return;
 
     const generateHexacoAnalysis = async () => {
-      // Check cache first
-      const cacheKey = `hexaco-analysis-${generateDataHash({ hexacoScores, archetype })}`;
+      // Include interests for "The Braid" analysis
+      const interests = Array.from(store.interests.entries()).map(
+        ([id, selection]) => ({
+          type: id,
+          proficiency: selection.level,
+        })
+      );
+
+      // Check cache first (includes interests for cache invalidation)
+      const cacheKey = `hexaco-analysis-${generateDataHash({ hexacoScores, archetype, interests })}`;
       const cached = getCachedAnalysis(cacheKey);
 
       if (cached) {
@@ -85,7 +93,7 @@ export default function DNARevealPage() {
         const response = await fetch('/api/ai/hexaco-analysis', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ hexacoScores, archetype }),
+          body: JSON.stringify({ hexacoScores, archetype, interests }),
         });
 
         const result = await response.json();
@@ -224,8 +232,38 @@ export default function DNARevealPage() {
       nextButtonIcon={<ArrowRight className="w-4 h-4" />}
     >
       <div className="space-y-8">
-        {/* DNA Reveal Card */}
-        {isReady && (
+        {/* UI IMPROVEMENT #1: Dual-Core Header - Radar Chart + Alignment Score */}
+        {isReady && dnaAnalysis && (
+          <div className="grid md:grid-cols-2 gap-6 mb-12">
+            {/* Left: Radar Chart */}
+            <div className="animate-fade-in">
+              <DNARevealCard
+                hexacoScores={hexacoScores}
+                archetype={archetype}
+                isLoading={false}
+              />
+            </div>
+
+            {/* Right: Alignment Score */}
+            <div className="flex flex-col justify-center">
+              <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl p-8 text-white text-center">
+                <p className="text-sm text-purple-200 mb-2 uppercase tracking-wide font-semibold">
+                  DNA Alignment Score
+                </p>
+                <div className="flex items-baseline justify-center gap-2 mb-3">
+                  <span className="text-7xl font-bold">{dnaAnalysis.overallAlignment}</span>
+                  <span className="text-3xl text-purple-200">%</span>
+                </div>
+                <p className="text-purple-100 text-sm">
+                  How your natural temperament aligns with your gifts and calling
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Show just radar chart if alignment analysis not ready */}
+        {isReady && !dnaAnalysis && (
           <div className="animate-fade-in">
             <DNARevealCard
               hexacoScores={hexacoScores}
@@ -283,6 +321,14 @@ export default function DNARevealPage() {
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-300 to-transparent"></div>
             </div>
 
+            {/* UI IMPROVEMENT #2: Mirror Summary - Archetype + Short Intro */}
+            <div className="bg-white rounded-lg border-2 border-blue-300 p-6 text-center">
+              <h3 className="text-2xl font-bold text-blue-900 mb-2">{archetype}</h3>
+              <p className="text-gray-700 text-sm max-w-2xl mx-auto">
+                {hexacoAnalysis.overallDescription.split('.').slice(0, 2).join('.') + '.'}
+              </p>
+            </div>
+
             {/* Overall Description */}
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 p-8">
               <div className="prose prose-blue max-w-none">
@@ -291,6 +337,24 @@ export default function DNARevealPage() {
                 </p>
               </div>
             </div>
+
+            {/* UI IMPROVEMENT #4: The Braid - Explicit Connections */}
+            {hexacoAnalysis.theBraid && hexacoAnalysis.theBraid.length > 0 && (
+              <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl border-2 border-indigo-300 p-6">
+                <h4 className="text-lg font-bold text-indigo-900 mb-4 flex items-center gap-2">
+                  <Link2 className="w-5 h-5 text-indigo-600" />
+                  The Braid: How Your DNA Fuels Your Interests
+                </h4>
+                <ul className="space-y-3">
+                  {hexacoAnalysis.theBraid.map((connection: string, idx: number) => (
+                    <li key={idx} className="flex items-start gap-3 text-indigo-900">
+                      <span className="text-indigo-600 font-bold mt-0.5 flex-shrink-0">⚡</span>
+                      <span className="text-sm leading-relaxed">{connection}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {/* Strengths & Growth Edges */}
             <div className="grid md:grid-cols-2 gap-6">
@@ -381,19 +445,33 @@ export default function DNARevealPage() {
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-purple-300 to-transparent"></div>
             </div>
 
-            {/* Alignment Score */}
-            <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl p-6 text-white text-center">
-              <p className="text-sm text-purple-200 mb-2 uppercase tracking-wide font-semibold">
-                Alignment Score
-              </p>
-              <div className="flex items-baseline justify-center gap-2 mb-3">
-                <span className="text-6xl font-bold">{dnaAnalysis.overallAlignment}</span>
-                <span className="text-2xl text-purple-200">%</span>
-              </div>
-              <p className="text-purple-100 text-sm max-w-md mx-auto">
-                Your natural temperament aligns with your gifts and calling
+            {/* UI IMPROVEMENT #2: Mirror Summary for DNA Alignment */}
+            <div className="bg-white rounded-lg border-2 border-purple-300 p-6 text-center">
+              <h3 className="text-2xl font-bold text-purple-900 mb-2">
+                {dnaAnalysis.overallAlignment}% Alignment
+              </h3>
+              <p className="text-gray-700 text-sm max-w-2xl mx-auto">
+                {dnaAnalysis.spiritualInsight.split('.').slice(0, 2).join('.') + '.'}
               </p>
             </div>
+
+            {/* UI IMPROVEMENT #4: The Braid - DNA + Stewardship Connections */}
+            {dnaAnalysis.theBraid && dnaAnalysis.theBraid.length > 0 && (
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border-2 border-purple-300 p-6">
+                <h4 className="text-lg font-bold text-purple-900 mb-4 flex items-center gap-2">
+                  <Link2 className="w-5 h-5 text-purple-600" />
+                  The Braid: How Your DNA Fuels Your Calling
+                </h4>
+                <ul className="space-y-3">
+                  {dnaAnalysis.theBraid.map((connection: string, idx: number) => (
+                    <li key={idx} className="flex items-start gap-3 text-purple-900">
+                      <span className="text-purple-600 font-bold mt-0.5 flex-shrink-0">⚡</span>
+                      <span className="text-sm leading-relaxed">{connection}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {/* Spiritual Insight */}
             <div className="bg-white rounded-xl border-2 border-purple-200 p-8">

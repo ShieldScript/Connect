@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { hexacoScores, archetype } = body;
+    const { hexacoScores, archetype, interests } = body;
 
     // Validate HEXACO scores structure
     const requiredDimensions = ['H', 'E', 'X', 'A', 'C', 'O'];
@@ -39,8 +39,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Generate HEXACO analysis
-    const analysis = await generateHexacoAnalysis(hexacoScores, archetype);
+    // Generate HEXACO analysis (interests are optional for "The Braid")
+    const analysis = await generateHexacoAnalysis(hexacoScores, archetype, interests);
 
     return NextResponse.json({
       success: true,

@@ -30,6 +30,7 @@ interface DNAAnalysis {
   overallAlignment: number; // 0-100 score of DNA/Stewardship alignment
   naturalFit: string[]; // Areas where DNA naturally supports their calling
   growthOpportunities: string[]; // Areas where DNA challenges their calling (growth edges)
+  theBraid: string[]; // 3-5 explicit connections between HEXACO and stewardship
   spiritualInsight: string; // 2-3 paragraph AI-generated insight
   dimensionInsights: {
     H: string; // How Honesty-Humility shows up in their life
@@ -150,13 +151,22 @@ Where does their DNA naturally support their calling? Be specific. Example:
 Where does their DNA create healthy tension with their calling? Frame positively. Example:
 - "Lower Extraversion (${scores.X.toFixed(1)}) means Evangelism may require more energy - consider pairing it with your relational depth"
 
-## 4. SPIRITUAL INSIGHT (200-250 words, 2-3 paragraphs)
+## 4. THE BRAID (3-5 explicit connections)
+Draw direct lines between specific HEXACO dimensions and their stewardship. Show how personality FUELS their calling and service. Examples:
+- "High Conscientiousness (${scores.C.toFixed(1)}) + Administration gift = you bring divine order to chaos"
+- "Openness (${scores.O.toFixed(1)}) + Teaching gift = you explore theology fearlessly and help others see new depths"
+- "Low Extraversion (${scores.X.toFixed(1)}) + Discipleship calling = you invest deeply in few, not shallowly in many"
+- "Agreeableness (${scores.A.toFixed(1)}) + Collaborative Leadership = you build consensus and unite teams"
+
+Be specific and masculine. Show WHY their DNA makes them uniquely suited for their gifts/calling.
+
+## 5. SPIRITUAL INSIGHT (200-250 words, 2-3 paragraphs)
 Write a pastoral reflection on how beautifully God has designed them for their calling. Show:
 - The divine intentionality in their wiring
 - How their DNA + Stewardship create a unique Kingdom contribution
 - Biblical framework (1-2 Scripture references)
 
-## 5. DIMENSION INSIGHTS (one sentence each)
+## 6. DIMENSION INSIGHTS (one sentence each)
 For each HEXACO dimension, explain how it shows up in their active life:
 - H: [How Honesty-Humility manifests in their gifts/calling]
 - E: [How Emotionality manifests]
@@ -170,6 +180,7 @@ FORMAT YOUR RESPONSE AS JSON:
   "overallAlignment": 85,
   "naturalFit": ["...", "...", "..."],
   "growthOpportunities": ["...", "..."],
+  "theBraid": ["...", "...", "..."],
   "spiritualInsight": "...",
   "dimensionInsights": {
     "H": "...",
@@ -201,6 +212,7 @@ function parseAIResponse(
         overallAlignment: parsed.overallAlignment || 70,
         naturalFit: parsed.naturalFit || [],
         growthOpportunities: parsed.growthOpportunities || [],
+        theBraid: parsed.theBraid || [],
         spiritualInsight: parsed.spiritualInsight || '',
         dimensionInsights: parsed.dimensionInsights || {},
       };
@@ -232,6 +244,7 @@ function generateFallbackAnalysis(
     overallAlignment: alignment,
     naturalFit,
     growthOpportunities,
+    theBraid: [], // No stewardship in fallback mode
     spiritualInsight: generateFallbackInsight(scores, archetype, alignment),
     dimensionInsights: {
       H: `Your Honesty-Humility (${scores.H.toFixed(1)}/5) shapes your integrity in leadership and stewardship.`,

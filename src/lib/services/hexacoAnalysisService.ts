@@ -18,6 +18,7 @@ interface HexacoScores {
 
 interface HexacoAnalysis {
   overallDescription: string; // 2-3 paragraph personality overview
+  theBraid: string[]; // 2-3 explicit connections between HEXACO and interests
   dimensionInsights: {
     H: string;
     E: string;
@@ -38,7 +39,8 @@ interface HexacoAnalysis {
  */
 export async function generateHexacoAnalysis(
   hexacoScores: HexacoScores,
-  archetype: string
+  archetype: string,
+  interests?: Array<{ type: string; proficiency: number }>
 ): Promise<HexacoAnalysis> {
   // Check if AI is available
   if (!isGeminiAvailable()) {
@@ -46,12 +48,12 @@ export async function generateHexacoAnalysis(
     return generateFallbackHexacoAnalysis(hexacoScores, archetype);
   }
 
-  const prompt = buildHexacoPrompt(hexacoScores, archetype);
+  const prompt = buildHexacoPrompt(hexacoScores, archetype, interests);
   const aiResponse = await generateContent(prompt, {
     temperature: 0.4, // Lower for consistency
     maxTokens: 2500,
     systemInstruction:
-      'You are a personality psychologist with expertise in the HEXACO model. Provide insightful, accurate personality analysis based solely on HEXACO scores. Be warm, affirming, and specific.',
+      'You are a Senior Behavioral Psychologist with expertise in the HEXACO model. Provide insightful, accurate personality analysis. Be authoritative, masculine, affirming, and highly specific. No generic fluff.',
   });
 
   // Parse AI response or fallback
@@ -67,8 +69,21 @@ export async function generateHexacoAnalysis(
 /**
  * Build prompt for pure HEXACO analysis
  */
-function buildHexacoPrompt(scores: HexacoScores, archetype: string): string {
-  return `You are analyzing a person's HEXACO personality profile. Provide a comprehensive personality analysis based ONLY on their temperament scores.
+function buildHexacoPrompt(
+  scores: HexacoScores,
+  archetype: string,
+  interests?: Array<{ type: string; proficiency: number }>
+): string {
+  // Format interests if provided
+  const interestsText = interests && interests.length > 0
+    ? interests
+        .sort((a, b) => b.proficiency - a.proficiency)
+        .slice(0, 5)
+        .map(i => `${i.type} (${i.proficiency}/5)`)
+        .join(', ')
+    : 'None reported';
+
+  return `You are analyzing a person's HEXACO personality profile. Provide a comprehensive personality analysis based on their temperament and interests.
 
 # HEXACO PERSONALITY PROFILE
 - Honesty-Humility: ${scores.H.toFixed(1)}/5
@@ -79,13 +94,24 @@ function buildHexacoPrompt(scores: HexacoScores, archetype: string): string {
 - Openness to Experience: ${scores.O.toFixed(1)}/5
 - Archetype: ${archetype}
 
+# INTERESTS (Top Activities)
+${interestsText}
+
 # YOUR TASK
-Provide a pure personality analysis based solely on these scores. Do NOT reference any specific calling, ministry, or career. Focus on the natural temperament.
+Provide a pure personality analysis. Do NOT reference calling, ministry, or career. Focus on natural temperament.
 
 ## 1. OVERALL DESCRIPTION (200-250 words, 2-3 paragraphs)
-Write a warm, insightful description of this person's natural temperament. What is it like to be them? How do they experience the world? What naturally drives them?
+Write an authoritative, insightful description of this person's natural temperament. Focus on the INTERPLAY between dimensions (e.g., how high Conscientiousness + low Extraversion creates a 'Quiet Craftsman' profile). What is it like to be them? How do they experience the world?
 
-## 2. DIMENSION INSIGHTS (1-2 sentences each)
+## 2. THE BRAID (2-3 explicit connections)
+If interests are provided, draw direct lines between specific HEXACO dimensions and their interests. Show how personality FUELS their pursuits. Examples:
+- "Your high Openness (${scores.O.toFixed(1)}) is the engine behind your Philosophy interest—you crave deep, abstract thinking"
+- "Conscientiousness (${scores.C.toFixed(1)}) + Woodworking reveals your precision-driven, hands-on mastery"
+- "Low Extraversion (${scores.X.toFixed(1)}) + Reading shows you recharge through solitary intellectual pursuits"
+
+Be specific and masculine. Show the WHY behind each interest through personality lens.
+
+## 3. DIMENSION INSIGHTS (1-2 sentences each)
 For each HEXACO dimension, explain what this score reveals about their personality:
 - H: [How Honesty-Humility shows up in their character and relationships]
 - E: [How Emotionality influences their inner experience and responses]
@@ -94,24 +120,25 @@ For each HEXACO dimension, explain what this score reveals about their personali
 - C: [How Conscientiousness drives their organization and goals]
 - O: [How Openness influences their curiosity and perspective]
 
-## 3. NATURAL STRENGTHS (3-5 bullet points)
+## 4. NATURAL STRENGTHS (3-5 bullet points)
 What are the clear strengths that emerge from this profile? Be specific about which dimensions create these strengths.
 
-## 4. GROWTH EDGES (2-3 bullet points)
+## 5. GROWTH EDGES (2-3 bullet points)
 Where might this temperament face challenges or need intentional development? Frame positively.
 
-## 5. RELATIONSHIP TENDENCIES (75-100 words)
+## 6. RELATIONSHIP TENDENCIES (75-100 words)
 How does this person naturally show up in relationships? What do they bring? What might they need to be aware of?
 
-## 6. WORK STYLE (75-100 words)
+## 7. WORK STYLE (75-100 words)
 How does this temperament approach tasks, projects, and responsibilities? What environments suit them?
 
-## 7. SPIRITUAL TENDENCIES (75-100 words)
+## 8. SPIRITUAL TENDENCIES (75-100 words)
 Based on personality research, what spiritual/religious tendencies might this temperament naturally lean toward? (e.g., contemplative vs active, structured vs spontaneous, communal vs individual)
 
 FORMAT YOUR RESPONSE AS JSON:
 {
   "overallDescription": "...",
+  "theBraid": ["...", "...", "..."],
   "dimensionInsights": {
     "H": "...",
     "E": "...",
@@ -145,6 +172,7 @@ function parseHexacoResponse(
       const parsed = JSON.parse(jsonMatch[0]);
       return {
         overallDescription: parsed.overallDescription || '',
+        theBraid: parsed.theBraid || [],
         dimensionInsights: parsed.dimensionInsights || {},
         strengths: parsed.strengths || [],
         growthEdges: parsed.growthEdges || [],
@@ -173,6 +201,7 @@ function generateFallbackHexacoAnalysis(
 
   return {
     overallDescription: generateFallbackDescription(scores, archetype),
+    theBraid: [], // No interests in fallback mode
     dimensionInsights: {
       H: `Your Honesty-Humility (${scores.H.toFixed(1)}/5) reflects your approach to power, status, and fairness. ${
         scores.H >= 3.5
