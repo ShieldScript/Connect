@@ -1,7 +1,7 @@
 'use client';
 
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Tooltip } from 'recharts';
-import { Sparkles, HelpCircle } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import {
   Tooltip as UITooltip,
   TooltipContent,
@@ -151,34 +151,36 @@ export default function DNARadarChart({ scores, archetype, className = '' }: DNA
 
       {/* Legend */}
       <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-3">
-        {chartData.map((dim) => (
-          <UITooltip key={dim.short}>
-            <TooltipTrigger asChild>
-              <div className="bg-white rounded-lg p-3 border border-gray-200 cursor-help hover:border-purple-300 transition-colors">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-1">
+        {chartData.map((dim, index) => {
+          // Top row (indices 0-2 on desktop) shows tooltip above, bottom row (3-5) shows below
+          const tooltipSide = index < 3 ? 'top' : 'bottom';
+
+          return (
+            <UITooltip key={dim.short}>
+              <TooltipTrigger asChild>
+                <div className="bg-white rounded-lg p-3 border border-gray-200 cursor-help hover:border-purple-300 transition-colors">
+                  <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-bold text-purple-600">
                       {dim.short}
                     </span>
-                    <HelpCircle className="w-3 h-3 text-gray-400" />
+                    <span className="text-lg font-bold text-gray-900">
+                      {dim.score.toFixed(1)}
+                    </span>
                   </div>
-                  <span className="text-lg font-bold text-gray-900">
-                    {dim.score.toFixed(1)}
-                  </span>
+                  <p className="text-xs text-gray-600 leading-tight">
+                    {dim.description}
+                  </p>
                 </div>
-                <p className="text-xs text-gray-600 leading-tight">
-                  {dim.description}
+              </TooltipTrigger>
+              <TooltipContent side={tooltipSide} className="max-w-xs bg-gray-900 text-white p-3">
+                <p className="font-bold mb-1">{dim.dimension}</p>
+                <p className="text-xs leading-relaxed">
+                  {hexacoDetails[dim.short].fullDescription}
                 </p>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs bg-gray-900 text-white p-3">
-              <p className="font-bold mb-1">{dim.dimension}</p>
-              <p className="text-xs leading-relaxed">
-                {hexacoDetails[dim.short].fullDescription}
-              </p>
-            </TooltipContent>
-          </UITooltip>
-        ))}
+              </TooltipContent>
+            </UITooltip>
+          );
+        })}
       </div>
 
       {/* Footer */}
