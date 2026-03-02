@@ -1,9 +1,5 @@
-import { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Onboarding | Brotherhood Connect',
-  description: 'Join the Brotherhood Connect community',
-};
+// Disable static generation for all onboarding pages (uses useSearchParams)
+export const dynamic = 'force-dynamic';
 
 export default function OnboardingLayout({
   children,
