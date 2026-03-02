@@ -81,36 +81,34 @@ function buildDNAAnalysisPrompt(
   archetype: string,
   stewardship: StewardshipData
 ): string {
-  // Extract key stewardship data
-  const topNaturalGifts = stewardship.naturalGiftings
+  // Extract stewardship data (ALL items, sorted by level/frequency)
+  const naturalGiftings = stewardship.naturalGiftings
     .sort((a, b) => b.level - a.level)
-    .slice(0, 3)
     .map(g => `${g.type} (${g.level}/5)`)
     .join(', ');
 
-  const topSupernaturalGifts = stewardship.supernaturalGiftings
-    .slice(0, 3)
+  const supernaturalGiftings = stewardship.supernaturalGiftings
+    .sort((a, b) => b.level - a.level)
     .map(g => `${g.type} (${g.level}/5)`)
     .join(', ');
 
-  const topCallings = stewardship.callings
+  const callings = stewardship.callings
     .sort((a, b) => b.clarity - a.clarity)
-    .slice(0, 3)
     .map(c => `${c.type} (${c.clarity}/5 clarity)`)
     .join(', ');
 
-  const leadershipStyles = stewardship.leadershipPatterns
-    .map(p => p.style)
+  const leadershipPatterns = stewardship.leadershipPatterns
+    .sort((a, b) => b.frequency - a.frequency)
+    .map(p => `${p.style} (${p.frequency}/5)`)
     .join(', ');
 
   const ministryExperiences = stewardship.ministryExperiences
     .sort((a, b) => b.level - a.level)
-    .slice(0, 5)
     .map(m => `${m.type} (${m.level}/5)`)
     .join(', ');
 
   const practices = stewardship.practices
-    .slice(0, 5)
+    .sort((a, b) => b.frequency - a.frequency)
     .map(p => `${p.type} (${p.frequency}/5)`)
     .join(', ');
 
@@ -126,10 +124,10 @@ function buildDNAAnalysisPrompt(
 - Archetype: ${archetype}
 
 # STEWARDSHIP DATA (How They Serve)
-- Top Natural Gifts: ${topNaturalGifts || 'None reported'}
-- Top Supernatural Gifts: ${topSupernaturalGifts || 'None reported'}
-- Primary Callings: ${topCallings || 'None reported'}
-- Leadership Style(s): ${leadershipStyles || 'None reported'}
+- Natural Gifts: ${naturalGiftings || 'None reported'}
+- Supernatural Gifts: ${supernaturalGiftings || 'None reported'}
+- Callings: ${callings || 'None reported'}
+- Leadership Patterns: ${leadershipPatterns || 'None reported'}
 - Ministry Experiences: ${ministryExperiences || 'None reported'}
 - Spiritual Practices: ${practices || 'None reported'}
 
