@@ -204,21 +204,36 @@ function parseAIResponse(
   stewardship: StewardshipData
 ): DNAAnalysis {
   try {
-    // Try to extract JSON from response (AI might wrap it in markdown)
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      return {
-        overallAlignment: parsed.overallAlignment || 70,
-        naturalFit: parsed.naturalFit || [],
-        growthOpportunities: parsed.growthOpportunities || [],
-        theBraid: parsed.theBraid || [],
-        spiritualInsight: parsed.spiritualInsight || '',
-        dimensionInsights: parsed.dimensionInsights || {},
-      };
+    // First, try to extract JSON from markdown code blocks
+    let jsonText = response;
+    const codeBlockMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (codeBlockMatch) {
+      jsonText = codeBlockMatch[1].trim();
+    } else {
+      // Try to extract JSON object directly
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        jsonText = jsonMatch[0];
+      }
     }
+
+    // Clean up common JSON issues
+    jsonText = jsonText
+      .replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
+      .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":'); // Ensure property names are quoted
+
+    const parsed = JSON.parse(jsonText);
+    return {
+      overallAlignment: parsed.overallAlignment || 70,
+      naturalFit: parsed.naturalFit || [],
+      growthOpportunities: parsed.growthOpportunities || [],
+      theBraid: parsed.theBraid || [],
+      spiritualInsight: parsed.spiritualInsight || '',
+      dimensionInsights: parsed.dimensionInsights || {},
+    };
   } catch (error) {
     console.error('Failed to parse AI DNA analysis response:', error);
+    console.error('Raw response:', response.substring(0, 500)); // Log first 500 chars for debugging
   }
 
   // Fallback if parsing fails

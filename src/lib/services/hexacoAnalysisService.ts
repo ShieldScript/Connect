@@ -166,23 +166,38 @@ function parseHexacoResponse(
   archetype: string
 ): HexacoAnalysis {
   try {
-    // Try to extract JSON from response (AI might wrap it in markdown)
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      return {
-        overallDescription: parsed.overallDescription || '',
-        theBraid: parsed.theBraid || [],
-        dimensionInsights: parsed.dimensionInsights || {},
-        strengths: parsed.strengths || [],
-        growthEdges: parsed.growthEdges || [],
-        relationshipTendencies: parsed.relationshipTendencies || '',
-        workStyle: parsed.workStyle || '',
-        spiritualTendencies: parsed.spiritualTendencies || '',
-      };
+    // First, try to extract JSON from markdown code blocks
+    let jsonText = response;
+    const codeBlockMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (codeBlockMatch) {
+      jsonText = codeBlockMatch[1].trim();
+    } else {
+      // Try to extract JSON object directly
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        jsonText = jsonMatch[0];
+      }
     }
+
+    // Clean up common JSON issues
+    jsonText = jsonText
+      .replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
+      .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":'); // Ensure property names are quoted
+
+    const parsed = JSON.parse(jsonText);
+    return {
+      overallDescription: parsed.overallDescription || '',
+      theBraid: parsed.theBraid || [],
+      dimensionInsights: parsed.dimensionInsights || {},
+      strengths: parsed.strengths || [],
+      growthEdges: parsed.growthEdges || [],
+      relationshipTendencies: parsed.relationshipTendencies || '',
+      workStyle: parsed.workStyle || '',
+      spiritualTendencies: parsed.spiritualTendencies || '',
+    };
   } catch (error) {
     console.error('Failed to parse HEXACO analysis response:', error);
+    console.error('Raw response:', response.substring(0, 500)); // Log first 500 chars for debugging
   }
 
   // Fallback if parsing fails
